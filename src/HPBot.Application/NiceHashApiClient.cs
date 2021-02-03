@@ -18,7 +18,7 @@ namespace HPBot.Application
     {
         private readonly NiceHashConfiguration configuration;
 
-        private HttpClient HttpClient => new HttpClient(new HttpClientHandler()
+        private readonly HttpClient httpClient = new HttpClient(new HttpClientHandler()
         {
             Proxy = new WebProxy()
             {
@@ -117,7 +117,7 @@ namespace HPBot.Application
                 "Body: {Body};",
                 method.ToString(), requestUri, time, nonce, configuration.OrganizationId, requestId, auth, bodyText);
 
-            var result = await HttpClient.SendAsync(message);
+            var result = await httpClient.SendAsync(message);
             
             if (result.IsSuccessStatusCode)
             {

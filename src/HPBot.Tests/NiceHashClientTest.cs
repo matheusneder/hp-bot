@@ -10,7 +10,7 @@ using Xunit;
 
 namespace HPBot.Tests
 {
-    public class NiceHashAdapterTest
+    public class NiceHashClientTest
     {
         [Fact]
         public async Task CreateHashPowerOrder_Success()

@@ -14,25 +14,25 @@ namespace HPBot.Application
             this.nhClient = nhClient ?? throw new ArgumentNullException(nameof(nhClient));
         }
 
-        public async Task<CreateOrderResult> CreateOrderAsync()
+        public async Task<CreateOrderResult> CreateOrderAsync(string market, float ammoutBtc, float priceBtc, float speedLimitThs, string poolId, string orderType)
         {
             var httpResponse = await nhClient.PostAsync("/main/api/v2/hashpower/order",
                 new
                 {
-                    market = "USA",
+                    market = market,
                     algorithm = "DAGGERHASHIMOTO",
                     displayMarketFactor = "TH",
                     marketFactor = 1000000000000,
-                    amount = 0.005,
-                    price = 2.7,
-                    poolId = "bb5004a4-ca8f-456b-a485-dcdb21f2e886",
-                    limit = 0.01,
-                    type = "STANDARD"
+                    amount = ammoutBtc,
+                    price = priceBtc,
+                    poolId = poolId,
+                    limit = speedLimitThs,
+                    type = orderType
                 });
 
             if(httpResponse.IsSuccessStatusCode)
             {
-                throw new NotImplementedException(); // TODO: complete
+                return new CreateOrderResult(); // TODO: complete
             }
             else
             {
