@@ -3,11 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29920.165
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.ConsoleApp", "HPBot.ConsoleApp\HPBot.ConsoleApp.csproj", "{10CD09E8-B1E6-44FE-9665-118B22029864}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HPBot.Application", "HPBot.Application\HPBot.Application.csproj", "{04173251-F864-4267-87BD-667A2BF12A4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.Application", "HPBot.Application\HPBot.Application.csproj", "{04173251-F864-4267-87BD-667A2BF12A4D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HPBot.Tests", "HPBot.Tests\HPBot.Tests.csproj", "{EF8889ED-543C-48E4-BDC5-AEAAEBEB9BA9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.Tests", "HPBot.Tests\HPBot.Tests.csproj", "{EF8889ED-543C-48E4-BDC5-AEAAEBEB9BA9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.OrderCreationFlow.ConsoleApp", "HPBot.OrderCreationFlow.ConsoleApp\HPBot.OrderCreationFlow.ConsoleApp.csproj", "{FBA15977-4921-4472-83F6-1DB6223E8526}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.OrderProfitabilityGuard.ConsoleApp", "HPBot.OrderProfitabilityGuard.ConsoleApp\HPBot.OrderProfitabilityGuard.ConsoleApp.csproj", "{86A45570-0548-470B-9766-00DE3BB320D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.OrderRefillerGuard.ConsoleApp", "HPBot.OrderRefillerGuard.ConsoleApp\HPBot.OrderRefillerGuard.ConsoleApp.csproj", "{B036E8AD-1035-473D-B0D5-2FBE717A9475}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +19,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{10CD09E8-B1E6-44FE-9665-118B22029864}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{10CD09E8-B1E6-44FE-9665-118B22029864}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{10CD09E8-B1E6-44FE-9665-118B22029864}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{10CD09E8-B1E6-44FE-9665-118B22029864}.Release|Any CPU.Build.0 = Release|Any CPU
 		{04173251-F864-4267-87BD-667A2BF12A4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{04173251-F864-4267-87BD-667A2BF12A4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04173251-F864-4267-87BD-667A2BF12A4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +27,18 @@ Global
 		{EF8889ED-543C-48E4-BDC5-AEAAEBEB9BA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF8889ED-543C-48E4-BDC5-AEAAEBEB9BA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF8889ED-543C-48E4-BDC5-AEAAEBEB9BA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBA15977-4921-4472-83F6-1DB6223E8526}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBA15977-4921-4472-83F6-1DB6223E8526}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBA15977-4921-4472-83F6-1DB6223E8526}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBA15977-4921-4472-83F6-1DB6223E8526}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86A45570-0548-470B-9766-00DE3BB320D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86A45570-0548-470B-9766-00DE3BB320D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86A45570-0548-470B-9766-00DE3BB320D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86A45570-0548-470B-9766-00DE3BB320D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B036E8AD-1035-473D-B0D5-2FBE717A9475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B036E8AD-1035-473D-B0D5-2FBE717A9475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B036E8AD-1035-473D-B0D5-2FBE717A9475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B036E8AD-1035-473D-B0D5-2FBE717A9475}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

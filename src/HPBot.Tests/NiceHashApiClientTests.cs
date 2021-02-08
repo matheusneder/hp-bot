@@ -10,16 +10,15 @@ using Xunit;
 
 namespace HPBot.Tests
 {
-    public class NiceHashClientTest
+    public class NiceHashApiClientTests
     {
         [Fact]
         public async Task CreateHashPowerOrder_Success()
         {
-            var nhConfiguration = JsonSerializer
-                .Deserialize<NiceHashConfiguration>(File.ReadAllText("niceHashConfig.json"));
+            NiceHashConfiguration nhConfiguration = NiceHashConfiguration
+                .ReadFromNiceHashConfigJsonFile("test");
 
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-
             var nhClient = new NiceHashApiClient(nhConfiguration, loggerFactory);
 
             var response = await nhClient.PostAsync("/main/api/v2/hashpower/order",

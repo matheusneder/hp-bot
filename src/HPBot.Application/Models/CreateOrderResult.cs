@@ -1,6 +1,6 @@
 ﻿namespace HPBot.Application.Models
 {
-    public class CreateOrderResult
+    public class CreateOrderResult : Order
     {
     }
 }

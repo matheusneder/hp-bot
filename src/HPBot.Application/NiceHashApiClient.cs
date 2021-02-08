@@ -16,7 +16,7 @@ namespace HPBot.Application
 {
     public class NiceHashApiClient
     {
-        private readonly NiceHashConfiguration configuration;
+        public NiceHashConfiguration Configuration { get; set; }
 
         private readonly HttpClient httpClient = new HttpClient(new HttpClientHandler()
         {
@@ -24,13 +24,16 @@ namespace HPBot.Application
             {
                 Address = new Uri("http://localhost:8888")
             }
-        });
+        })
+        {
+            Timeout = TimeSpan.FromSeconds(15)
+        };
 
         private readonly ILogger logger;
 
         public NiceHashApiClient(NiceHashConfiguration configuration, ILoggerFactory loggerFactory)
         {
-            this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             logger = loggerFactory?.CreateLogger<NiceHashApiClient>() ?? 
                 throw new ArgumentNullException(nameof(loggerFactory));
         }
@@ -39,10 +42,10 @@ namespace HPBot.Application
         {
             var queryString = string.Join("&", query
                 .Select(i => $"{HttpUtility.UrlEncode(i.Key)}=" +
-                $"{HttpUtility.UrlEncode(Convert.ToString(i.Value, CultureInfo.InvariantCulture))}")
-                .ToArray());
-            
-            string requestUri = $"https://{configuration.ApiHost}{path}";
+                    $"{HttpUtility.UrlEncode(Convert.ToString(i.Value, CultureInfo.InvariantCulture))}")
+                    .ToArray());
+
+            string requestUri = $"https://{Configuration.ApiHost}{path}";
             string requestId = Guid.NewGuid().ToString();
 
             if (!string.IsNullOrWhiteSpace(queryString))
@@ -63,13 +66,48 @@ namespace HPBot.Application
 
             message.Headers.Add("X-Time", time);
             message.Headers.Add("X-Nonce", nonce);
-            message.Headers.Add("X-Organization-Id", configuration.OrganizationId);
+            message.Headers.Add("X-Organization-Id", Configuration.OrganizationId);
             message.Headers.Add("X-Request-Id", requestId);
-            
+
+            string auth = CreateAuth(method, path, body, queryString, nonce, time, bodyText);
+
+            message.Headers.Add("X-Auth", auth);
+
+            logger.LogDebug("Initiating HTTP request; " +
+                "HttpMethod: '{HttpMethod}' ::" +
+                "RequestUri: '{RequestUri}' :: " +
+                "X-Time: '{Time}' :: " +
+                "X-Nonce: '{Nonce}' :: " +
+                "X-Organization-Id: '{OrganizationId}' :: " +
+                "X-Request-Id: '{RequestId}' :: " +
+                "X-Auth: '{Auth}' :: " +
+                "Body: '{Body}'",
+                method.ToString(), requestUri, time, nonce, Configuration.OrganizationId, requestId, auth, bodyText);
+
+            var result = await httpClient.SendAsync(message);
+
+            if (result.IsSuccessStatusCode)
+            {
+                logger.LogDebug("HTTP request {RequestId} success. Status: {HttpStatus}",
+                    requestId,
+                    (int)result.StatusCode);
+            }
+            else
+            {
+                logger.LogWarning("HTTP request {RequestId} error. Status: {HttpStatus}",
+                    requestId,
+                    (int)result.StatusCode);
+            }
+
+            return result;
+        }
+
+        private string CreateAuth(HttpMethod method, string path, object body, string queryString, string nonce, string time, string bodyText)
+        {
             Encoding iso = Encoding.GetEncoding("ISO-8859-1");
 
             var authInput = ImmutableList.Create<byte>()
-                .AddRange(iso.GetBytes(configuration.ApiKey))
+                .AddRange(iso.GetBytes(Configuration.ApiKey))
                 .Add(0)
                 .AddRange(iso.GetBytes(time))
                 .Add(0)
@@ -77,7 +115,7 @@ namespace HPBot.Application
                 .Add(0)
                 // empty field
                 .Add(0)
-                .AddRange(iso.GetBytes(configuration.OrganizationId))
+                .AddRange(iso.GetBytes(Configuration.OrganizationId))
                 .Add(0)
                 // empty field
                 .Add(0)
@@ -95,49 +133,40 @@ namespace HPBot.Application
                     .AddRange(Encoding.UTF8.GetBytes(bodyText));
             }
 
-            var authKey = Encoding.UTF8.GetBytes(configuration.ApiSecret);
+            var authKey = Encoding.UTF8.GetBytes(Configuration.ApiSecret);
 
-            string auth = configuration.ApiKey + ":" +
+            string auth = Configuration.ApiKey + ":" +
                 BitConverter.ToString(
                     new HMACSHA256(authKey)
                         .ComputeHash(authInput.ToArray()))
                         .Replace("-", string.Empty)
                         .ToLower();
+            return auth;
+        }
 
-            message.Headers.Add("X-Auth", auth);
-            
-            logger.LogInformation("Initiating HTTP request; " +
-                "HttpMethod: {HttpMethod};" +
-                "RequestUri: {RequestUri}; " +
-                "X-Time: {Time};" +
-                "X-Nonce: {Nonce};" +
-                "X-Organization-Id: {OrganizationId};" +
-                "X-Request-Id: {RequestId};" +
-                "X-Auth: {Auth};" +
-                "Body: {Body};",
-                method.ToString(), requestUri, time, nonce, configuration.OrganizationId, requestId, auth, bodyText);
+        public Task<HttpResponseMessage> PostAsync(string path, Dictionary<string, object> query, object body)
+        {
+            return SendAsync(HttpMethod.Post, path, query, body);
+        }
 
-            var result = await httpClient.SendAsync(message);
-            
-            if (result.IsSuccessStatusCode)
-            {
-                logger.LogInformation("HTTP request {RequestId} success. Status: {HttpStatus}",
-                    requestId,
-                    (int)result.StatusCode);
-            }
-            else
-            {
-                logger.LogWarning("HTTP request {RequestId} error. Status: {HttpStatus}",
-                    requestId,
-                    (int)result.StatusCode);
-            }
+        public Task<HttpResponseMessage> GetAsync(string path, Dictionary<string, object> query)
+        {
+            return SendAsync(HttpMethod.Get, path, query, null);
+        }
 
-            return result;
+        public Task<HttpResponseMessage> GetAsync(string path)
+        {
+            return GetAsync(path, new Dictionary<string, object>() { });
         }
 
         public Task<HttpResponseMessage> PostAsync(string path, object body)
         {
-            return SendAsync(HttpMethod.Post, path, new Dictionary<string, object>() { }, body);
+            return PostAsync(path, new Dictionary<string, object>() { }, body);
+        }
+
+        public Task<HttpResponseMessage> DeleteAsync(string path)
+        {
+            return SendAsync(HttpMethod.Delete, path, new Dictionary<string, object>() { }, null);
         }
     }
 }

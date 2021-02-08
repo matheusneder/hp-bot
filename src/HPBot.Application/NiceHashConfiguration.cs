@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Text.Json;
 
 namespace HPBot.Application
 
@@ -11,13 +13,17 @@ namespace HPBot.Application
         public string OrganizationId { set; get; }
         public string ApiSecret { set; get; }
         public string ApiHost { set; get; }
+        public string EUPoolId { get; set; }
+        public string UsaPoolId { get; set; }
 
-        //public NiceHashConfiguration(string apiKey, string organizationId, string apiSecret, string apiHost)
-        //{
-        //    ApiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
-        //    OrganizationId = organizationId ?? throw new ArgumentNullException(nameof(organizationId));
-        //    ApiSecret = apiSecret ?? throw new ArgumentNullException(nameof(apiSecret));
-        //    ApiHost = apiHost ?? throw new ArgumentNullException(nameof(apiHost));
-        //}
+        public static NiceHashConfiguration ReadFromNiceHashConfigJsonFile(string environment)
+        {
+            var configurationSet = JsonSerializer
+                .Deserialize<Dictionary<string, NiceHashConfiguration>>(
+                    File.ReadAllText("niceHashConfig.json"));
+
+            var configuration = configurationSet[environment];
+            return configuration;
+        }
     }
 }

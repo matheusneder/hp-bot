@@ -361,5 +361,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# NiceHash credentials
+# NiceHash creedentials
 niceHashConfig.json
+
+# Telegram creedentials
+launchSettings.json
