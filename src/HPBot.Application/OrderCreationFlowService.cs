@@ -38,7 +38,7 @@ namespace HPBot.Application
         {
             PriceProvider priceProvider = new PriceProvider(twoCryptoCalc, loggerFactory);
 
-            priceProvider.RunningOrder = (await niceHashApi.GetActiveOrders())
+            priceProvider.RunningOrder = (await niceHashApi.GetActiveOrdersAsync())
                 .SingleOrDefault(o => o.IsRunning);
 
             if (priceProvider.RunningOrder == null)

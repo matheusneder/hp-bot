@@ -18,6 +18,8 @@ namespace HPBot.OrderCreationFlow.ConsoleApp
                 builder.AddProvider(new TelegramLogProvider());
             });
 
+            var logger = loggerFactory.CreateLogger<Program>();
+
             var nhClient = new NiceHashApiClient(configuration, loggerFactory);
             var nhAdapter = new NiceHashApiAdapter(nhClient);
             var orderCreationService = new OrderCreationService(nhAdapter, loggerFactory);
@@ -29,7 +31,19 @@ namespace HPBot.OrderCreationFlow.ConsoleApp
             float amountBtc = 0.001F;
             float speedLimitThs = 0.01F;
 
-            await orderLifecycleService.StartAsync(speedLimitThs, amountBtc);
+            for (; ; )
+            {
+                try
+                {
+                    await orderLifecycleService.StartAsync(speedLimitThs, amountBtc);
+                }
+                catch(Exception e)
+                {
+                    logger.LogWarning(e, "Error on main loop!");
+                }
+
+                await Task.Delay(5000);
+            }
         }
         
     }

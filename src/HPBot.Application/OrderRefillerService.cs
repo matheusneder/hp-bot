@@ -23,14 +23,14 @@ namespace HPBot.Application
         }
 
         public async Task RefillRunningOrderIfApplicableAsync(float refillAmountBtc = 0.001F, 
-            float remainAmountBtcThresholdToRefill = 0.0005F)
+            float remainAmountBtcThresholdToRefill = 0.00075F)
         {
-            var runningOrder = (await niceHashApi.GetActiveOrders())
+            var runningOrder = (await niceHashApi.GetActiveOrdersAsync())
                 .SingleOrDefault(o => o.IsRunning);
 
             if(runningOrder == null)
             {
-                logger.LogInformation("There is no running orders");
+                logger.LogInformation("There are no running orders");
             }
             else
             {
@@ -40,7 +40,8 @@ namespace HPBot.Application
                 {
                     if (runningOrder.RemainAmountBtc <= remainAmountBtcThresholdToRefill)
                     {
-                        if (runningOrder.CanLiveTill - DateTimeOffset.Now < TimeSpan.FromMinutes(40))
+                        if (runningOrder.CanLiveTill - DateTimeOffset.Now < TimeSpan
+                            .FromMinutes(1440F * (refillAmountBtc + runningOrder.RemainAmountBtc) / (runningOrder.PriceBtc * 0.01F)))
                         {
                             logger.LogInformation("Skiping refill order {OrderId} due it is near do expire (CanLiveTill).",
                                 runningOrder.Id,

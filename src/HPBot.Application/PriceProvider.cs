@@ -46,11 +46,11 @@ namespace HPBot.Application
                         errorCount++;
                         logger.LogWarning(e, "Error retriving 2CryptoCalc mining average reward {ErrorCount}.", errorCount);
                         
-                        if(errorCount > 5 && currentAverageRewardBtc > 0)
+                        if(errorCount > 30 && currentAverageRewardBtc > 0)
                         {
                             currentAverageRewardBtc = float.MinValue;
 
-                            logger.LogWarning("Error count greater than 5, reseting currentAverageRewardBtc to float.MinValue");
+                            logger.LogWarning("Error count greater than 30, reseting currentAverageRewardBtc to float.MinValue");
                         }
                         
                         await Task.Delay(5000);
@@ -72,22 +72,47 @@ namespace HPBot.Application
 
             var timeTillExpire = RunningOrder.CanLiveTill - DateTimeOffset.Now;
 
-            if (timeTillExpire < TimeSpan.FromHours(1))
+            if (timeTillExpire < TimeSpan.FromHours(2))
+            {
+                return float.MaxValue;
+            }
+
+            if (timeTillExpire < TimeSpan.FromHours(3))
+            {
+                return RunningOrder.PriceBtc * 1.5F;
+            }
+
+            if (timeTillExpire < TimeSpan.FromHours(4))
+            {
+                return RunningOrder.PriceBtc * 1.2F;
+            }
+
+            if (timeTillExpire < TimeSpan.FromHours(6))
+            {
+                return RunningOrder.PriceBtc * 1.1F;
+            }
+
+            if (timeTillExpire < TimeSpan.FromHours(7))
+            {
+                return RunningOrder.PriceBtc * 1.07F;
+            }
+
+            if (timeTillExpire < TimeSpan.FromHours(8))
             {
                 return RunningOrder.PriceBtc * 1.03F;
             }
 
-            if (timeTillExpire < TimeSpan.FromHours(2))
-            {
-                return RunningOrder.PriceBtc * 1.015F;
-            }
-
             if (timeTillExpire < TimeSpan.FromHours(12))
             {
-                return RunningOrder.PriceBtc + 0.00001F;
+                return RunningOrder.PriceBtc * 1.01F;
             }
 
-            if (timeTillExpire < TimeSpan.FromHours(18))
+            if (timeTillExpire < TimeSpan.FromHours(16))
+            {
+                return RunningOrder.PriceBtc + 0.000001F;
+            }
+
+            if (timeTillExpire < TimeSpan.FromHours(19))
             {
                 return RunningOrder.PriceBtc * 0.99F;
             }

@@ -7,11 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HPBot.Application", "HPBot.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HPBot.Tests", "HPBot.Tests\HPBot.Tests.csproj", "{EF8889ED-543C-48E4-BDC5-AEAAEBEB9BA9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.OrderCreationFlow.ConsoleApp", "HPBot.OrderCreationFlow.ConsoleApp\HPBot.OrderCreationFlow.ConsoleApp.csproj", "{FBA15977-4921-4472-83F6-1DB6223E8526}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HPBot.OrderCreationFlow.ConsoleApp", "HPBot.OrderCreationFlow.ConsoleApp\HPBot.OrderCreationFlow.ConsoleApp.csproj", "{FBA15977-4921-4472-83F6-1DB6223E8526}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.OrderProfitabilityGuard.ConsoleApp", "HPBot.OrderProfitabilityGuard.ConsoleApp\HPBot.OrderProfitabilityGuard.ConsoleApp.csproj", "{86A45570-0548-470B-9766-00DE3BB320D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HPBot.OrderProfitabilityGuard.ConsoleApp", "HPBot.OrderProfitabilityGuard.ConsoleApp\HPBot.OrderProfitabilityGuard.ConsoleApp.csproj", "{86A45570-0548-470B-9766-00DE3BB320D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.OrderRefillerGuard.ConsoleApp", "HPBot.OrderRefillerGuard.ConsoleApp\HPBot.OrderRefillerGuard.ConsoleApp.csproj", "{B036E8AD-1035-473D-B0D5-2FBE717A9475}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HPBot.OrderRefillerGuard.ConsoleApp", "HPBot.OrderRefillerGuard.ConsoleApp\HPBot.OrderRefillerGuard.ConsoleApp.csproj", "{B036E8AD-1035-473D-B0D5-2FBE717A9475}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPBot.EthToBtcExchanger.ConsoleApp", "HPBot.EthToBtcExchanger.ConsoleApp\HPBot.EthToBtcExchanger.ConsoleApp.csproj", "{9094FFAC-65FB-4288-AD74-E14B2F899484}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{B036E8AD-1035-473D-B0D5-2FBE717A9475}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B036E8AD-1035-473D-B0D5-2FBE717A9475}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B036E8AD-1035-473D-B0D5-2FBE717A9475}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9094FFAC-65FB-4288-AD74-E14B2F899484}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9094FFAC-65FB-4288-AD74-E14B2F899484}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9094FFAC-65FB-4288-AD74-E14B2F899484}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9094FFAC-65FB-4288-AD74-E14B2F899484}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

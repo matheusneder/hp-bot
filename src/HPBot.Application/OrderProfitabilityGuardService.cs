@@ -51,7 +51,7 @@ namespace HPBot.Application
 
         private async Task CancelRunningOrderIfPriceGtRewardAsync()
         {
-            var runningOrder = (await niceHashApi.GetActiveOrders())
+            var runningOrder = (await niceHashApi.GetActiveOrdersAsync())
                 .SingleOrDefault(o => o.IsRunning);
 
             if (runningOrder != null)
@@ -75,7 +75,7 @@ namespace HPBot.Application
             }
             else
             {
-                logger.LogInformation("There is no running orders.");
+                logger.LogInformation("There are no running orders.");
             }
         }
     }

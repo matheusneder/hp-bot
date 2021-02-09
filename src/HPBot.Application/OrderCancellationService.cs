@@ -35,7 +35,7 @@ namespace HPBot.Application
                     logger.LogWarning(e, "Error while trying to cancel order {OrderId}",
                         orderId);
 
-                    var freshOrderDetails = await niceHashApi.GetOrderById(orderId);
+                    var freshOrderDetails = await niceHashApi.GetOrderByIdAsync(orderId);
 
                     if (freshOrderDetails == null)
                     {

@@ -38,7 +38,7 @@ namespace HPBot.Tests
         {
             NiceHashApiAdapter nhAdapter = CreateNiceHashAdapter();
 
-            var orders = await nhAdapter.GetActiveOrders();
+            var orders = await nhAdapter.GetActiveOrdersAsync();
 
             Assert.Equal("1ca8aaed-c07a-4e91-baaa-f03c02d68f94", orders.First().Id);
         }

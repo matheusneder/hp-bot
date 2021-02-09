@@ -22,7 +22,8 @@ namespace HPBot.Application
         }
 
         /// <exception cref="CreateOrderException" />
-        public async Task<CreateOrderResult> CreateOrderAsync(string market, float ammoutBtc, float priceBtc, float speedLimitThs, string poolId, string orderType)
+        public async Task<CreateOrderResult> CreateOrderAsync(string market, float ammoutBtc, float priceBtc, 
+            float speedLimitThs, string poolId, string orderType)
         {
             var httpResponse = await Client.PostAsync("/main/api/v2/hashpower/order",
                 new
@@ -133,7 +134,7 @@ namespace HPBot.Application
         /// Note: Active order not necessarily running, check IsRunning property
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<ListOrderResultItem>> GetActiveOrders()
+        public async Task<IEnumerable<ListOrderResultItem>> GetActiveOrdersAsync()
         {
             var query = new Dictionary<string, object>()
             {
@@ -176,7 +177,7 @@ namespace HPBot.Application
             throw new InvalidOperationException(); // TODO: complete
         }
 
-        public async Task<OrderDetailResult> GetOrderById(string id)
+        public async Task<OrderDetailResult> GetOrderByIdAsync(string id)
         {
             var httpResult = await Client.GetAsync($"/main/api/v2/hashpower/order/{id}");
 
@@ -203,22 +204,63 @@ namespace HPBot.Application
         }
 
         //POST /exchange/api/v2/order?market=TETHTBTC&side=SELL&type=MARKET&quantity=0.89
-        public Task EthToBtcExchangeAsync(float quantityEth)
+        public async Task<EthToBtcExchangeResult> EthToBtcExchangeAsync(float quantityEth)
         {
-            // response:
-            //{
-            //  "orderId": "38b83e0f-f584-43ef-989f-ffd25f792805",
-            //  "price": 0,
-            //  "origQty": 0.89,
-            //  "origSndQty": 0,
-            //  "executedQty": 0.89,
-            //  "executedSndQty": 0.00089,
-            //  "type": "MARKET",
-            //  "side": "SELL",
-            //  "submitTime": 1612390009527571,
-            //  "lastResponseTime": 1612390009674477,
-            //  "state": "FULL"
-            //}
+            var query = new Dictionary<string, object>()
+            {
+                { "market", "ETHBTC" },
+                { "side", "SELL" },
+                { "type", "MARKET" },
+                { "quantity", quantityEth }
+            };
+
+            var httpResponse = await Client.PostAsync("/exchange/api/v2/order", query, null);
+
+            if(httpResponse.IsSuccessStatusCode)
+            {
+                var dto = JsonSerializer
+                    .Deserialize<ExchangeResultDto>(await httpResponse.Content.ReadAsStringAsync());
+
+                return new EthToBtcExchangeResult()
+                {
+                    OrderId = dto.orderId,
+                    AmountEthToSell = dto.origQty,
+                    AmountEthSold = dto.executedQty,
+                    AmountBtcReceived = dto.executedSndQty,
+                    State = dto.state
+                };
+            }
+
+            throw new NotImplementedException(); // TODO: implement!
+        }
+
+        public async Task<IEnumerable<ListDepositResultItem>> GetEthDepositsAsync(DateTimeOffset since)
+        {
+            var query = new Dictionary<string, object>()
+            {
+                //statuses=COMPLETED&op=GT&timestamp=1612795336317&page=0&size=10
+                { "statuses", "COMPLETED" },
+                { "op", "GT" },
+                { "timestamp", since.ToUnixTimeMilliseconds() },
+                { "page", 0 },
+                { "size", 10 }
+            };
+
+            var httpResponse = await Client.GetAsync("/main/api/v2/accounting/deposits/ETH", query);
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var dto = JsonSerializer
+                    .Deserialize<ListDepositResultDto>(await httpResponse.Content.ReadAsStringAsync());
+
+                return dto.list.Select(i => new ListDepositResultItem()
+                {
+                    Id = i.id,
+                    CreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(i.created),
+                    Amount = float.Parse(i.amount, CultureInfo.InvariantCulture.NumberFormat)
+                });
+            }
+
             throw new NotImplementedException(); // TODO: implement!
         }
     }
