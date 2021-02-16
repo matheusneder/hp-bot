@@ -43,7 +43,7 @@ namespace HPBot.Application
 
                 foreach (var market in markets)
                 {
-                    taskMap.Add(market.Key, niceHash.GetCurrentFixedPrice(market.Key, speedLimitThs));
+                    taskMap.Add(market.Key, niceHash.GetCurrentFixedPriceAsync(market.Key, speedLimitThs));
                 }
 
                 foreach(var marketTaskPair in taskMap)
@@ -103,15 +103,20 @@ namespace HPBot.Application
 
             try
             {
-                currentPrice = await niceHash.GetCurrentFixedPrice(market, speedLimitThs);
+                currentPrice = await niceHash.GetCurrentFixedPriceAsync(market, speedLimitThs);
             }
-            catch (Exception e) 
-            when(e is InvalidOperationException || e is IOException || e is HttpRequestException || e is TaskCanceledException)
+            catch(DataQueryException e) when (e.Cause == DataQueryException.DataQueryExceptionCause.FixedOrderPriceQuerySpeedLimitTooBig)
             {
-                logger.LogWarning(
-                    e,
-                    $"{e.GetType().Name} was thrown by GetCurrentFixedPrice with message '{{Message}}' wating for 5 seconds to resume...",
-                    e.Message);
+                logger.LogWarning(e, $"Could not get current fixed price on {market} market. " +
+                    $"There are no more hashpower available for speed limit of {speedLimitThs} TH/s at this moment.");
+
+                return null;
+            }
+            // TODO: aqui estava tratando InvalidOperationExcetion que nao sera mais lancada
+            catch (Exception e) when (e is TaskCanceledException || e is HttpRequestException) 
+            {
+                logger.LogWarning(e, $"Could not get current fixed price on {market} market. " +
+                    $"Request failed, wating for 5 seconds to resume...");
 
                 await Task.Delay(5000);
 

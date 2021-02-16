@@ -10,7 +10,12 @@ namespace HPBot.Application.Models
         public float AmountEthToSell { get; set; }
         public float AmountEthSold { get; set; }
         public float AmountBtcReceived { get; set; }
-        public string State { get; set; } // TODO: Map it
+        public ExchangeState State { get; set; }
         public DateTimeOffset LastDepositCreatedAt { get; set; }
+
+        public enum ExchangeState
+        {
+            Full  = 1
+        }
     }
 }

@@ -8,6 +8,11 @@ namespace HPBot.Application.Exceptions
     [Serializable]
     public abstract class AppException : Exception
     {
+        protected AppException()
+        {
+
+        }
+
         protected AppException(string message) : base(message)
         {
         }

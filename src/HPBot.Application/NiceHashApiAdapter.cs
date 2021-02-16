@@ -74,17 +74,20 @@ namespace HPBot.Application
 
         }
 
+        /// <exception cref="CancelOrderException"></exception>
         public async Task CancelOrderAsync(string id)
         {
             var httpResponse = await Client.DeleteAsync($"/main/api/v2/hashpower/order/{id}");
 
             if(!httpResponse.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException(); // TODO: completar
+                throw new CancelOrderException(id, (int)httpResponse.StatusCode, await httpResponse.Content.ReadAsStringAsync());
             }
         }
 
-        public async Task<FixedPriceResult> GetCurrentFixedPrice(string market, float speedLimitThs)
+        /// <exception cref="DataQueryException"></exception>
+        /// <exception cref="ErrorMappingException"></exception>
+        public async Task<FixedPriceResult> GetCurrentFixedPriceAsync(string market, float speedLimitThs)
         {
             var httpResponse = await Client.PostAsync("/main/api/v2/hashpower/orders/fixedPrice",
                 new
@@ -94,9 +97,10 @@ namespace HPBot.Application
                     algorithm = "DAGGERHASHIMOTO"
                 });
 
+            string responseText = await httpResponse.Content.ReadAsStringAsync();
+
             if (httpResponse.IsSuccessStatusCode)
             {
-                string responseText = await httpResponse.Content.ReadAsStringAsync();
                 var dto = JsonSerializer.Deserialize<FixedPriceResultDto>(responseText);
 
                 return new FixedPriceResult()
@@ -106,10 +110,14 @@ namespace HPBot.Application
                 };
             }
 
-            // HTTP 400 {"error_id":"04177a38-0a46-4c0a-800b-7af91976cf3c","errors":[{"code":5012,"message":"Hashpower order fixed speed limit is too big"}]}
+            var errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText);
 
+            if (errorDto.errors.Any(e => e.code == 5012))
+            {
+                throw new DataQueryException(DataQueryException.DataQueryExceptionCause.FixedOrderPriceQuerySpeedLimitTooBig);
+            }
 
-            throw new InvalidOperationException(); // TODO: complete
+            throw new ErrorMappingException(nameof(GetCurrentFixedPriceAsync), (int)httpResponse.StatusCode, responseText);
         }
 
         public async Task RefillOrder(string id, float amountBtc)
@@ -227,7 +235,9 @@ namespace HPBot.Application
                     AmountEthToSell = dto.origQty,
                     AmountEthSold = dto.executedQty,
                     AmountBtcReceived = dto.executedSndQty,
-                    State = dto.state
+                    State = dto.state == "FULL" ? 
+                        EthToBtcExchangeResult.ExchangeState.Full : 
+                        throw new MappingException<EthToBtcExchangeResult>(nameof(EthToBtcExchangeResult.State), dto.state)
                 };
             }
 
