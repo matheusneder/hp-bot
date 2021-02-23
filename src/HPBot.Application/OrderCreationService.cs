@@ -16,12 +16,19 @@ namespace HPBot.Application
     {
         private readonly NiceHashApiAdapter niceHash;
         private readonly ILogger logger;
+        private readonly ILogger notifier;
 
         public OrderCreationService(NiceHashApiAdapter niceHash, ILoggerFactory loggerFactory)
         {
             this.niceHash = niceHash ?? throw new ArgumentNullException(nameof(niceHash));
-            logger = loggerFactory?.CreateLogger<OrderCreationService>() ??
+
+            if(loggerFactory == null)
+            {
                 throw new ArgumentNullException(nameof(loggerFactory));
+            }
+
+            logger = loggerFactory.CreateLogger<OrderCreationService>();
+            notifier = loggerFactory.CreateNotifier<OrderCreationService>();
         }
 
         public async Task<CreateOrderResult> TryBestOrderAsync(
@@ -75,7 +82,7 @@ namespace HPBot.Application
 
                         if (order != null)
                         {
-                            logger.LogError("Created order on {Market} market!", market.Key); // TODO: fix log level
+                            notifier.LogInformation("Created order on {Market} market!", market.Key);
 
                             return order;
                         }

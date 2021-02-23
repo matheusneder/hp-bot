@@ -12,14 +12,21 @@ namespace HPBot.Application
         private readonly TwoCryptoCalcAdapter twoCryptoCalcAdapter;
         private readonly NiceHashApiAdapter niceHashApi;
         private readonly ILogger logger;
+        private readonly ILogger notifier;
 
         public OrderRefillerService(TwoCryptoCalcAdapter twoCryptoCalcAdapter,
             NiceHashApiAdapter niceHashApi, ILoggerFactory loggerFactory)
         {
             this.twoCryptoCalcAdapter = twoCryptoCalcAdapter ?? throw new ArgumentNullException(nameof(twoCryptoCalcAdapter));
             this.niceHashApi = niceHashApi ?? throw new ArgumentNullException(nameof(niceHashApi));
-            logger = loggerFactory?.CreateLogger<OrderRefillerService>() ?? 
+
+            if(loggerFactory == null)
+            {
                 throw new ArgumentNullException(nameof(loggerFactory));
+            }
+
+            logger = loggerFactory.CreateLogger<OrderRefillerService>();
+            notifier = loggerFactory.CreateLogger<OrderRefillerService>();
         }
 
         public async Task RefillRunningOrderIfApplicableAsync(float refillAmountBtc = 0.001F, 
@@ -49,7 +56,7 @@ namespace HPBot.Application
                         }
                         else
                         {
-                            logger.LogError("Refilling order {OrderId} with (RefillAmountBtc) due " + // TODO: fix log level
+                            notifier.LogInformation("Refilling order {OrderId} with (RefillAmountBtc) due " +
                                 "RemainAmountBtc ({RemainAmountBtc}) <= " +
                                 "RemainAmountBtcThresholdToRefill ({RemainAmountBtcThresholdToRefill})",
                                 runningOrder.Id,

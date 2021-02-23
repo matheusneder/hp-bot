@@ -12,12 +12,19 @@ namespace HPBot.Application
     {
         private readonly NiceHashApiAdapter niceHashApi;
         private readonly ILogger logger;
+        private readonly ILogger notifier;
 
         public EthToBtcExchangeService(NiceHashApiAdapter niceHashApi, ILoggerFactory loggerFactory)
         {
             this.niceHashApi = niceHashApi ?? throw new ArgumentNullException(nameof(niceHashApi));
-            logger = loggerFactory?.CreateLogger<EthToBtcExchangeService>() ?? 
+            
+            if(loggerFactory == null)
+            {
                 throw new ArgumentNullException(nameof(loggerFactory));
+            }
+            
+            logger = loggerFactory.CreateLogger<EthToBtcExchangeService>();
+            notifier = loggerFactory.CreateNotifier<EthToBtcExchangeService>();
         }
 
         public async Task<EthToBtcExchangeResult> PerformExchangeIfHasNewDeposit(DateTimeOffset since)
@@ -38,16 +45,16 @@ namespace HPBot.Application
                 var exchangeResult = await niceHashApi.EthToBtcExchangeAsync(amountEthToExchange);
                 exchangeResult.LastDepositCreatedAt = deposits.Max(d => d.CreatedAt);
 
-                logger.LogError( // TODO: fix log level
-                    "Exchanged OrderId: {OrderId} :: {AmountEth} ETH -> {AmountBtc} BTC; State: {State}", 
+                notifier.LogInformation(
+                    "Exchanged OrderId: {OrderId} :: {AmountEth} ETH -> {AmountBtc} BTC; State: {State}",
                     exchangeResult.OrderId,
                     exchangeResult.AmountEthSold,
                     exchangeResult.AmountBtcReceived,
-                    exchangeResult.State); 
+                    exchangeResult.State);
 
                 if(exchangeResult.AmountEthToSell != exchangeResult.AmountEthSold)
                 {
-                    logger.LogError( // TODO: fix log level
+                    notifier.LogWarning(
                         "OrderId: {OrderId} :: AmountEthToSell ({AmountEthToSell}) != AmountEthSold ({AmountEthSold})",
                         exchangeResult.OrderId,
                         exchangeResult.AmountEthToSell,

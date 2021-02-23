@@ -14,6 +14,7 @@ namespace HPBot.Application
         private readonly NiceHashApiAdapter niceHashApi;
         private readonly TwoCryptoCalcAdapter twoCryptoCalc;
         private readonly ILogger logger;
+        private readonly ILogger notifier;
 
         public OrderProfitabilityGuardService(
             OrderCancellationService orderCancellationService,
@@ -26,8 +27,14 @@ namespace HPBot.Application
                 throw new ArgumentNullException(nameof(niceHashApi));
             this.twoCryptoCalc = twoCryptoCalc ?? 
                 throw new ArgumentNullException(nameof(twoCryptoCalc));
-            logger = loggerFactory?.CreateLogger<OrderProfitabilityGuardService>() ?? 
+
+            if(loggerFactory == null)
+            {
                 throw new ArgumentNullException(nameof(loggerFactory));
+            }
+
+            logger = loggerFactory.CreateLogger<OrderProfitabilityGuardService>();
+            notifier = loggerFactory.CreateNotifier<OrderProfitabilityGuardService>();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -64,7 +71,7 @@ namespace HPBot.Application
 
                 if (runningOrder.PriceBtc > miningAverageRewardBtc * 0.99)
                 {
-                    logger.LogError("Cancelling order {OrderId} due the price ({PriceBtc}) " + // TODO: fix log level
+                    notifier.LogInformation("Cancelling order {OrderId} due the price ({PriceBtc}) " +
                         "greater than reward ({MiningAverageRewardBtc})",
                         runningOrder.Id,
                         runningOrder.PriceBtc,
