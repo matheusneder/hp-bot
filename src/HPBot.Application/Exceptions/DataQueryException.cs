@@ -23,7 +23,7 @@ namespace HPBot.Application.Exceptions
         {
             /// <summary>
             /// Tipically occur when NiceHash has no more hashpower available for new fixed orders. 
-            /// This is an ephemeral condition; should be back soon
+            /// This is an ephemeral condition; should be back.
             /// </summary>
             FixedOrderPriceQuerySpeedLimitTooBig = 1
         }

@@ -48,6 +48,7 @@ namespace HPBot.Application
 
                 foreach(var marketTaskPair in taskMap)
                 {
+                    // TODO: handle errors
                     var fixedPriceBtc = (await marketTaskPair.Value).FixedPriceBtc;
 
                     logger.LogInformation("Price for {Market} market: {MaketPriceBtc}", marketTaskPair.Key, fixedPriceBtc);
@@ -112,8 +113,7 @@ namespace HPBot.Application
 
                 return null;
             }
-            // TODO: aqui estava tratando InvalidOperationExcetion que nao sera mais lancada
-            catch (Exception e) when (e is TaskCanceledException || e is HttpRequestException) 
+            catch (NiceHashApiTechnicalIssueException e)
             {
                 logger.LogWarning(e, $"Could not get current fixed price on {market} market. " +
                     $"Request failed, wating for 5 seconds to resume...");

@@ -87,21 +87,18 @@ namespace HPBot.Application
 
         /// <exception cref="DataQueryException"></exception>
         /// <exception cref="ErrorMappingException"></exception>
+        /// <exception cref="NiceHashApiTechnicalIssueException"></exception>
         public async Task<FixedPriceResult> GetCurrentFixedPriceAsync(string market, float speedLimitThs)
         {
-            var httpResponse = await Client.PostAsync("/main/api/v2/hashpower/orders/fixedPrice",
-                new
-                {
-                    limit = speedLimitThs,
-                    market = market,
-                    algorithm = "DAGGERHASHIMOTO"
-                });
-
-            string responseText = await httpResponse.Content.ReadAsStringAsync();
-
-            if (httpResponse.IsSuccessStatusCode)
+            try
             {
-                var dto = JsonSerializer.Deserialize<FixedPriceResultDto>(responseText);
+                var dto = await Client.PostAsync<FixedPriceResultDto>("/main/api/v2/hashpower/orders/fixedPrice",
+                    new
+                    {
+                        limit = speedLimitThs,
+                        market = market,
+                        algorithm = "DAGGERHASHIMOTO"
+                    });
 
                 return new FixedPriceResult()
                 {
@@ -109,32 +106,49 @@ namespace HPBot.Application
                     MaxSpeedThs = float.Parse(dto.fixedMax, CultureInfo.InvariantCulture.NumberFormat)
                 };
             }
-
-            var errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText);
-
-            if (errorDto.errors.Any(e => e.code == 5012))
+            catch(NiceHashApiClientException e)
             {
-                throw new DataQueryException(DataQueryException.DataQueryExceptionCause.FixedOrderPriceQuerySpeedLimitTooBig);
-            }
+                if (e.HttpStatusCode == HttpStatusCode.BadRequest)
+                {
+#pragma warning disable S1066 // Collapsible "if" statements should be merged
+                    if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5012))
+#pragma warning restore S1066 // Collapsible "if" statements should be merged
+                    {
+                        throw new DataQueryException(DataQueryException.DataQueryExceptionCause.FixedOrderPriceQuerySpeedLimitTooBig);
+                    }
+                }
 
-            throw new ErrorMappingException(nameof(GetCurrentFixedPriceAsync), (int)httpResponse.StatusCode, responseText);
+                throw new ErrorMappingException(nameof(GetCurrentFixedPriceAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
+            }
         }
 
+        /// <exception cref="ErrorMappingException"></exception>
+        /// <exception cref="NiceHashApiTechnicalIssueException"></exception>
         public async Task RefillOrder(string id, float amountBtc)
         {
-            var httpResponse = await Client.PostAsync($"/main/api/v2/hashpower/order/{id}/refill",
-                new 
-                {
-                    amount = amountBtc
-                });
-
-            if (!httpResponse.IsSuccessStatusCode)
+            try
             {
-                // HTTP 400: {"error_id":"3af7aaa4-73b6-4623-9eb5-126827be942b","errors":[{"code":5090,"message":"Refill order amount below minimal order amount"}]}
-                // HTTP 409: {"error_id":"14cd594b-f7d0-400e-87eb-30ee27560f4d","errors":[{"code":3001,"message":"Insufficient balance in account: (TBTC, USER, 53b0b2d1-f535-4681-b010-1419ad215fb0)"}]}
-
-                throw new InvalidOperationException(); // TODO: complete
+                await Client.PostAsync($"/main/api/v2/hashpower/order/{id}/refill",
+                    new
+                    {
+                        amount = amountBtc
+                    });
             }
+            catch (NiceHashApiClientException e)
+            {
+                switch (e.HttpStatusCode)
+                {
+                    case HttpStatusCode.BadRequest:
+                    // HTTP 400: {"error_id":"3af7aaa4-73b6-4623-9eb5-126827be942b","errors":[{"code":5090,"message":"Refill order amount below minimal order amount"}]}
+                    case (HttpStatusCode)409:
+                        // HTTP 409: {"error_id":"14cd594b-f7d0-400e-87eb-30ee27560f4d","errors":[{"code":3001,"message":"Insufficient balance in account: (TBTC, USER, 53b0b2d1-f535-4681-b010-1419ad215fb0)"}]}
+                        break;
+                    default:
+                        throw new ErrorMappingException(nameof(RefillOrder), e.HttpStatusCode, e.NiceHashApiErrorDto);
+                }
+            }
+
+            // TODO: verificar utilizadores (lançava InvalidOperationException)
         }
 
         // GET /main/api/v2/hashpower/myOrders?algorithm=DAGGERHASHIMOTO&status=ACTIVE&active=true&op=GT&limit=10&ts=1612550585737

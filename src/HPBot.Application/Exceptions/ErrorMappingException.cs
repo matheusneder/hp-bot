@@ -1,7 +1,10 @@
-﻿using System;
+﻿using HPBot.Application.Dtos;
+using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
 
 namespace HPBot.Application.Exceptions
 {
@@ -12,11 +15,11 @@ namespace HPBot.Application.Exceptions
     [Serializable]
     public class ErrorMappingException : Exception
     {
-        public ErrorMappingException(string operation, int httpStatusCode, string rawResponseText)
+        public ErrorMappingException(string operation, HttpStatusCode httpStatusCode, object errorData)
         {
             Operation = operation;
             HttpStatusCode = httpStatusCode;
-            RawResponseText = rawResponseText;
+            ErrorData = errorData;
         }
 
         protected ErrorMappingException(SerializationInfo info, StreamingContext context) : base(info, context)
@@ -24,9 +27,10 @@ namespace HPBot.Application.Exceptions
         }
 
         public string Operation { get; }
-        public int HttpStatusCode { get; }
-        public string RawResponseText { get; }
+        public HttpStatusCode HttpStatusCode { get; }
+        public object ErrorData { get; }
 
-        public override string Message => $"Could not map response. HTTP status {HttpStatusCode}; ResponseText: '{RawResponseText}'";
+        public override string Message => $"Could not map response for '{Operation}'. HTTP status {HttpStatusCode}; " +
+            $"ErrorData: '{JsonSerializer.Serialize(ErrorData)}'";
     }
 }
