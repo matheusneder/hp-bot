@@ -120,33 +120,65 @@ namespace HPBot.Application
                     requestId,
                     (int)httpResponse.StatusCode);
 
-                return JsonSerializer.Deserialize<T>(responseText);
+                try
+                {
+                    return JsonSerializer.Deserialize<T>(responseText);
+                }
+                catch(Exception e)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not deserialize NiceHash API response (Status {httpResponse.StatusCode}). " +
+                        $"Response text: '{responseText}'.", e);
+                }
             }
 
-            if(httpResponse.StatusCode >= HttpStatusCode.BadRequest && httpResponse.StatusCode < HttpStatusCode.InternalServerError)
+            NiceHashApiErrorDto errorDto = null;
+
+            if (httpResponse.StatusCode >= HttpStatusCode.BadRequest && 
+                httpResponse.StatusCode < HttpStatusCode.InternalServerError)
             {
                 logger.LogInformation("HTTP request {RequestId} client error. Status: {HttpStatus}",
                     requestId,
                     (int)httpResponse.StatusCode);
 
+                try
+                {
+                    errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText);
 
-                throw new NiceHashApiClientException(httpResponse.StatusCode,
-                    JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText));
+                    logger.LogInformation("ErrorId: {ErrorId}. ResponseText: '{ResponseText}'.", 
+                        errorDto.error_id,
+                        responseText);
+                }
+                catch(Exception e)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not deserialize NiceHash API response (Status {httpResponse.StatusCode}). " +
+                        $"Response text: '{responseText}'.", e);
+                }
+
+                throw new NiceHashApiClientException(httpResponse.StatusCode, errorDto);
             }
 
             logger.LogWarning("HTTP request {RequestId} server error. Status: {HttpStatus}",
                 requestId,
                 (int)httpResponse.StatusCode);
 
-            NiceHashApiErrorDto errorDto;
-
             try
             {
                 errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText);
+
+                logger.LogInformation("ErrorId: {ErrorId}. ResponseText: '{ResponseText}'.",
+                    errorDto.error_id,
+                    responseText);
             }
             catch
             {
+                // Despite catch all, the raw responseText is being included in
+                // NiceHashApiServerException for further analysis.
                 errorDto = null;
+
+                logger.LogInformation("ErrorId: #NA. ResponseText: '{ResponseText}'.",
+                    responseText);
             }
 
             // assume status code >= 500 (in fact, if status range 300-399 occur 

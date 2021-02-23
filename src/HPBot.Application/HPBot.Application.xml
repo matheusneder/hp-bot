@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>HPBot.Application</name>
+    </assembly>
+    <members>
+        <member name="T:HPBot.Application.Exceptions.ErrorMappingException">
+            <summary>
+            Exception to be thrown when there are no mappings for a specific error response messsage.
+            NOTE: This is not an application exception, it's a fatal error (need to fix mappings).
+            </summary>
+        </member>
+        <member name="F:HPBot.Application.Exceptions.GetCurrentFixedPriceException.GetCurrentFixedPriceErrorReason.FixedOrderPriceQuerySpeedLimitTooBig">
+            <summary>
+            Tipically occur when NiceHash has no more hashpower available for new fixed orders. 
+            This is an ephemeral condition.
+            </summary>
+        </member>
+        <member name="T:HPBot.Application.Exceptions.MappingException">
+            <summary>
+            Exception to be thrown when there are no mappings for a specific property (usually an enum).
+            NOTE: This is not an application exception, it's a fatal error (need to fix mappings).
+            </summary>
+        </member>
+        <member name="P:HPBot.Application.Models.ListOrderResultItem.AmountBtc">
+            <summary>
+            Total contracted including refills
+            </summary>
+        </member>
+        <member name="P:HPBot.Application.Models.ListOrderResultItem.AvailableAmountBtc">
+            <summary>
+            Total contracted including refills minus taxes
+            </summary>
+        </member>
+        <member name="P:HPBot.Application.Models.ListOrderResultItem.PayedAmountBtc">
+            <summary>
+            Spent amount (not refundable)
+            </summary>
+        </member>
+        <member name="P:HPBot.Application.Models.ListOrderResultItem.EstimateDurationInSeconds">
+            <summary>
+            Estimated amount of time till order balance get fully consumed
+            </summary>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiAdapter.CreateOrderAsync(System.String,System.Single,System.Single,System.Single,System.String,System.String)">
+            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiAdapter.GetCurrentFixedPriceAsync(System.String,System.Single)">
+            <exception cref="T:HPBot.Application.Exceptions.GetCurrentFixedPriceException"></exception>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiAdapter.RefillOrder(System.String,System.Single)">
+            <exception cref="T:HPBot.Application.Exceptions.RefillOrderException"></exception>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiAdapter.GetActiveOrdersAsync">
+            <summary>
+            Note: Active order not necessarily running, check IsRunning property
+            </summary>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)">
+            <summary>
+            You should take care only of <see cref="T:HPBot.Application.Exceptions.NiceHashApiTechnicalIssueException"/> for <see cref="T:HPBot.Application.Exceptions.NiceHashApiSendRequestException"/>, 
+            <see cref="T:HPBot.Application.Exceptions.NiceHashApiReadResponseException"/> and <see cref="T:HPBot.Application.Exceptions.NiceHashApiServerException"/>.
+            For API client errors (400 &lt;= StatusCode &lt; 500), use <see cref="T:HPBot.Application.Exceptions.NiceHashApiClientException" />.
+            </summary>
+            <exception cref="T:HPBot.Application.Exceptions.NiceHashApiSendRequestException"></exception>
+            <exception cref="T:HPBot.Application.Exceptions.NiceHashApiReadResponseException"></exception>
+            <exception cref="T:HPBot.Application.Exceptions.NiceHashApiClientException"></exception>
+            <exception cref="T:HPBot.Application.Exceptions.NiceHashApiServerException"></exception>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiClient.PostAsync``1(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)">
+            <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiClient.PostAsync``1(System.String,System.Object)">
+            <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiClient.PostAsync(System.String,System.Object)">
+            <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiClient.GetAsync``1(System.String,System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiClient.GetAsync``1(System.String)">
+            <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
+        </member>
+        <member name="M:HPBot.Application.NiceHashApiClient.DeleteAsync(System.String)">
+            <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
+        </member>
+        <member name="M:HPBot.Application.OrderCreationService.TryOrderAsync(System.String,System.String,System.Single,System.Single,System.Single)">
+            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
+        </member>
+    </members>
+</doc>

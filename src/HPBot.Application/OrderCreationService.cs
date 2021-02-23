@@ -106,7 +106,7 @@ namespace HPBot.Application
             {
                 currentPrice = await niceHash.GetCurrentFixedPriceAsync(market, speedLimitThs);
             }
-            catch(DataQueryException e) when (e.Cause == DataQueryException.DataQueryExceptionCause.FixedOrderPriceQuerySpeedLimitTooBig)
+            catch(GetCurrentFixedPriceException e) when (e.Reason == GetCurrentFixedPriceException.GetCurrentFixedPriceErrorReason.FixedOrderPriceQuerySpeedLimitTooBig)
             {
                 logger.LogWarning(e, $"Could not get current fixed price on {market} market. " +
                     $"There are no more hashpower available for speed limit of {speedLimitThs} TH/s at this moment.");

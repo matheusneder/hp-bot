@@ -21,7 +21,7 @@ namespace HPBot.Tests
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var nhClient = new NiceHashApiClient(nhConfiguration, loggerFactory);
 
-            var response = await nhClient.PostAsync("/main/api/v2/hashpower/order",
+            await nhClient.PostAsync("/main/api/v2/hashpower/order",
                 new
                 {
                     market = "USA",
@@ -34,8 +34,6 @@ namespace HPBot.Tests
                     limit = 0.01,
                     type = "STANDARD"
                 });
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
 }

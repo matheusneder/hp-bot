@@ -25,24 +25,21 @@ namespace HPBot.Application
         public async Task<CreateOrderResult> CreateOrderAsync(string market, float ammoutBtc, float priceBtc, 
             float speedLimitThs, string poolId, string orderType)
         {
-            var httpResponse = await Client.PostAsync("/main/api/v2/hashpower/order",
-                new
-                {
-                    market = market,
-                    algorithm = "DAGGERHASHIMOTO",
-                    displayMarketFactor = "TH",
-                    marketFactor = 1000000000000,
-                    amount = ammoutBtc,
-                    price = priceBtc,
-                    poolId = poolId,
-                    limit = speedLimitThs,
-                    type = orderType
-                });
-
-            if(httpResponse.IsSuccessStatusCode)
+            try
             {
-                string responseText = await httpResponse.Content.ReadAsStringAsync();
-                var dto = JsonSerializer.Deserialize<CreateOrderResultDto>(responseText);
+                var dto = await Client.PostAsync<CreateOrderResultDto>("/main/api/v2/hashpower/order",
+                    new
+                    {
+                        market = market,
+                        algorithm = "DAGGERHASHIMOTO",
+                        displayMarketFactor = "TH",
+                        marketFactor = 1000000000000,
+                        amount = ammoutBtc,
+                        price = priceBtc,
+                        poolId = poolId,
+                        limit = speedLimitThs,
+                        type = orderType
+                    });
 
                 return new CreateOrderResult()
                 {
@@ -51,43 +48,40 @@ namespace HPBot.Application
                     CanLiveTill = dto.endTs
                 };
             }
-
-            switch (httpResponse.StatusCode)
+            catch(NiceHashApiClientException e)
             {
-                case (HttpStatusCode)400:
-                case (HttpStatusCode)409:
-                    var errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(await httpResponse.Content.ReadAsStringAsync());
+                switch (e.HttpStatusCode)
+                {
+                    case HttpStatusCode.BadRequest:
+                    case HttpStatusCode.Conflict:
+                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5054))
+                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason.GenericError);
+                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5056))
+                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason.PriceChanged);
+                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 3001))
+                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason
+                                .InsufficientBalanceInAccount);
+                        break;
+                }
 
-                    if (errorDto.errors.Any(e => e.code == 5054))
-                        throw new CreateOrderException("Error creating fixed order");
-
-                    if (errorDto.errors.Any(e => e.code == 5056))
-                        throw new CreateOrderException("Price changed");
-
-                    if (errorDto.errors.Any(e => e.code == 3001))
-                        throw new CreateOrderException("Insufficient balance in account");
-                    
-                    break;
+                throw new ErrorMappingException(nameof(CreateOrderAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
             }
-
-            throw new UnknowHttpException(httpResponse);
-
         }
 
-        /// <exception cref="CancelOrderException"></exception>
         public async Task CancelOrderAsync(string id)
         {
-            var httpResponse = await Client.DeleteAsync($"/main/api/v2/hashpower/order/{id}");
-
-            if(!httpResponse.IsSuccessStatusCode)
+            try
             {
-                throw new CancelOrderException(id, (int)httpResponse.StatusCode, await httpResponse.Content.ReadAsStringAsync());
+                await Client.DeleteAsync($"/main/api/v2/hashpower/order/{id}");
+            }
+            catch(NiceHashApiClientException e)
+            {
+                // TODO: Map undocumented errors 
+                throw new ErrorMappingException(nameof(CancelOrderAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
             }
         }
 
-        /// <exception cref="DataQueryException"></exception>
-        /// <exception cref="ErrorMappingException"></exception>
-        /// <exception cref="NiceHashApiTechnicalIssueException"></exception>
+        /// <exception cref="GetCurrentFixedPriceException"></exception>
         public async Task<FixedPriceResult> GetCurrentFixedPriceAsync(string market, float speedLimitThs)
         {
             try
@@ -114,7 +108,7 @@ namespace HPBot.Application
                     if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5012))
 #pragma warning restore S1066 // Collapsible "if" statements should be merged
                     {
-                        throw new DataQueryException(DataQueryException.DataQueryExceptionCause.FixedOrderPriceQuerySpeedLimitTooBig);
+                        throw new GetCurrentFixedPriceException(GetCurrentFixedPriceException.GetCurrentFixedPriceErrorReason.FixedOrderPriceQuerySpeedLimitTooBig);
                     }
                 }
 
@@ -122,8 +116,7 @@ namespace HPBot.Application
             }
         }
 
-        /// <exception cref="ErrorMappingException"></exception>
-        /// <exception cref="NiceHashApiTechnicalIssueException"></exception>
+        /// <exception cref="RefillOrderException"></exception>
         public async Task RefillOrder(string id, float amountBtc)
         {
             try
@@ -139,23 +132,24 @@ namespace HPBot.Application
                 switch (e.HttpStatusCode)
                 {
                     case HttpStatusCode.BadRequest:
-                    // HTTP 400: {"error_id":"3af7aaa4-73b6-4623-9eb5-126827be942b","errors":[{"code":5090,"message":"Refill order amount below minimal order amount"}]}
-                    case (HttpStatusCode)409:
-                        // HTTP 409: {"error_id":"14cd594b-f7d0-400e-87eb-30ee27560f4d","errors":[{"code":3001,"message":"Insufficient balance in account: (TBTC, USER, 53b0b2d1-f535-4681-b010-1419ad215fb0)"}]}
+                    case HttpStatusCode.Conflict:
+                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5090))
+                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderExceptionReason
+                                .RefillOrderAmountBelowMinimalOrderAmount);
+                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 3001))
+                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderExceptionReason
+                                .InsufficientBalanceInAccount);
                         break;
-                    default:
-                        throw new ErrorMappingException(nameof(RefillOrder), e.HttpStatusCode, e.NiceHashApiErrorDto);
                 }
-            }
 
-            // TODO: verificar utilizadores (lançava InvalidOperationException)
+                throw new ErrorMappingException(nameof(RefillOrder), e.HttpStatusCode, e.NiceHashApiErrorDto);
+            }
         }
 
         // GET /main/api/v2/hashpower/myOrders?algorithm=DAGGERHASHIMOTO&status=ACTIVE&active=true&op=GT&limit=10&ts=1612550585737
         /// <summary>
         /// Note: Active order not necessarily running, check IsRunning property
         /// </summary>
-        /// <returns></returns>
         public async Task<IEnumerable<ListOrderResultItem>> GetActiveOrdersAsync()
         {
             var query = new Dictionary<string, object>()
@@ -168,16 +162,13 @@ namespace HPBot.Application
                 { "limit", 15 }
             };
 
-            var httpResult = await Client.GetAsync("/main/api/v2/hashpower/myOrders", query);
-
-            if (httpResult.IsSuccessStatusCode)
+            try
             {
-                var dto = JsonSerializer
-                    .Deserialize<ListOrderResultDto>(await httpResult.Content.ReadAsStringAsync());
+                var dto = await Client.GetAsync<ListOrderResultDto>("/main/api/v2/hashpower/myOrders", query);
 
-                if(dto?.list == null)
+                if (dto?.list == null)
                 {
-                    throw new InvalidOperationException(); // TODO: complete
+                    throw new InvalidOperationException("Null list were returned.");
                 }
 
                 return dto.list.Select(i =>
@@ -195,18 +186,18 @@ namespace HPBot.Application
                     }
                 );
             }
-
-            throw new InvalidOperationException(); // TODO: complete
+            catch(NiceHashApiClientException e)
+            {
+                // TODO: Map undocumented errors if any
+                throw new ErrorMappingException(nameof(GetActiveOrdersAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
+            }
         }
 
         public async Task<OrderDetailResult> GetOrderByIdAsync(string id)
         {
-            var httpResult = await Client.GetAsync($"/main/api/v2/hashpower/order/{id}");
-
-            if (httpResult.IsSuccessStatusCode)
+            try
             {
-                var dto = JsonSerializer
-                    .Deserialize<OrderDetailResultDto>(await httpResult.Content.ReadAsStringAsync());
+                var dto = await Client.GetAsync<OrderDetailResultDto>($"/main/api/v2/hashpower/order/{id}");
 
                 return new OrderDetailResult()
                 {
@@ -216,13 +207,16 @@ namespace HPBot.Application
                     Status = dto.status.code
                 };
             }
-
-            if(httpResult.StatusCode == HttpStatusCode.NotFound)
+            catch(NiceHashApiClientException e)
             {
-                return null;
-            }
+                if(e.HttpStatusCode == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
 
-            throw new InvalidOperationException(); // TODO: complete
+                // TODO: Map undocumented errors if any
+                throw new ErrorMappingException(nameof(GetOrderByIdAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
+            }
         }
 
         //POST /exchange/api/v2/order?market=TETHTBTC&side=SELL&type=MARKET&quantity=0.89
@@ -236,12 +230,9 @@ namespace HPBot.Application
                 { "quantity", quantityEth }
             };
 
-            var httpResponse = await Client.PostAsync("/exchange/api/v2/order", query, null);
-
-            if(httpResponse.IsSuccessStatusCode)
+            try
             {
-                var dto = JsonSerializer
-                    .Deserialize<ExchangeResultDto>(await httpResponse.Content.ReadAsStringAsync());
+                var dto = await Client.PostAsync<ExchangeResultDto>("/exchange/api/v2/order", query, null);
 
                 return new EthToBtcExchangeResult()
                 {
@@ -249,13 +240,16 @@ namespace HPBot.Application
                     AmountEthToSell = dto.origQty,
                     AmountEthSold = dto.executedQty,
                     AmountBtcReceived = dto.executedSndQty,
-                    State = dto.state == "FULL" ? 
-                        EthToBtcExchangeResult.ExchangeState.Full : 
+                    State = dto.state == "FULL" ?
+                        EthToBtcExchangeResult.ExchangeState.Full :
                         throw new MappingException<EthToBtcExchangeResult>(nameof(EthToBtcExchangeResult.State), dto.state)
                 };
             }
-
-            throw new NotImplementedException(); // TODO: implement!
+            catch(NiceHashApiClientException e)
+            {
+                // TODO: Map undocumented errors if any
+                throw new ErrorMappingException(nameof(GetOrderByIdAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
+            }
         }
 
         public async Task<IEnumerable<ListDepositResultItem>> GetEthDepositsAsync(DateTimeOffset since)
@@ -270,12 +264,9 @@ namespace HPBot.Application
                 { "size", 10 }
             };
 
-            var httpResponse = await Client.GetAsync("/main/api/v2/accounting/deposits/ETH", query);
-
-            if (httpResponse.IsSuccessStatusCode)
+            try
             {
-                var dto = JsonSerializer
-                    .Deserialize<ListDepositResultDto>(await httpResponse.Content.ReadAsStringAsync());
+                var dto = await Client.GetAsync<ListDepositResultDto>("/main/api/v2/accounting/deposits/ETH", query);
 
                 return dto.list.Select(i => new ListDepositResultItem()
                 {
@@ -284,8 +275,11 @@ namespace HPBot.Application
                     Amount = float.Parse(i.amount, CultureInfo.InvariantCulture.NumberFormat)
                 });
             }
-
-            throw new NotImplementedException(); // TODO: implement!
+            catch(NiceHashApiClientException e)
+            {
+                // TODO: Map undocumented errors if any
+                throw new ErrorMappingException(nameof(GetEthDepositsAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
+            }
         }
     }
 }
