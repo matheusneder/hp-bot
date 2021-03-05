@@ -1,6 +1,9 @@
 ﻿using HPBot.Application;
+using HPBot.Application.Adapters;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace HPBot.OrderProfitabilityGuard.ConsoleApp
@@ -18,12 +21,23 @@ namespace HPBot.OrderProfitabilityGuard.ConsoleApp
                 builder.AddProvider(new TelegramLogProvider());
             });
 
-            var nhClient = new NiceHashApiClient(configuration, loggerFactory);
-            var nhAdapter = new NiceHashApiAdapter(nhClient);
-            var orderCancellationService = new OrderCancellationService(nhAdapter, loggerFactory);
+            HttpClient httpClient = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = new WebProxy()
+                {
+                    Address = new Uri("http://localhost:8888")
+                }
+            })
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+
+            var nhClient = new NiceHashApiPersonedClient(httpClient, configuration, loggerFactory);
+            HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter = new HashpowerMarketPrivateAdapter(nhClient);
+            var orderCancellationService = new OrderCancellationService(hashpowerMarketPrivateAdapter, loggerFactory);
             
             var orderProfitabilityGuardService = new OrderProfitabilityGuardService(
-                orderCancellationService, nhAdapter, new TwoCryptoCalcAdapter(), loggerFactory);
+                orderCancellationService, hashpowerMarketPrivateAdapter, new TwoCryptoCalcAdapter(), loggerFactory);
 
             await orderProfitabilityGuardService.StartAsync();
         }

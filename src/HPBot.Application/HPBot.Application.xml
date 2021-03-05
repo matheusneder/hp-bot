@@ -4,6 +4,20 @@
         <name>HPBot.Application</name>
     </assembly>
     <members>
+        <member name="M:HPBot.Application.Adapters.HashpowerMarketPrivateAdapter.CreateOrderAsync(System.String,System.Single,System.Single,System.Single,System.String,System.String)">
+            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
+        </member>
+        <member name="M:HPBot.Application.Adapters.HashpowerMarketPrivateAdapter.RefillOrder(System.String,System.Single)">
+            <exception cref="T:HPBot.Application.Exceptions.RefillOrderException"></exception>
+        </member>
+        <member name="M:HPBot.Application.Adapters.HashpowerMarketPrivateAdapter.GetActiveOrdersAsync">
+            <summary>
+            Note: Active order not necessarily running, check IsRunning property
+            </summary>
+        </member>
+        <member name="M:HPBot.Application.Adapters.HashpowerMarketPublicAdapter.GetCurrentFixedPriceAsync(System.String,System.Single)">
+            <exception cref="T:HPBot.Application.Exceptions.GetCurrentFixedPriceException"></exception>
+        </member>
         <member name="T:HPBot.Application.Exceptions.ErrorMappingException">
             <summary>
             Exception to be thrown when there are no mappings for a specific error response messsage.
@@ -40,20 +54,6 @@
         <member name="P:HPBot.Application.Models.ListOrderResultItem.EstimateDurationInSeconds">
             <summary>
             Estimated amount of time till order balance get fully consumed
-            </summary>
-        </member>
-        <member name="M:HPBot.Application.NiceHashApiAdapter.CreateOrderAsync(System.String,System.Single,System.Single,System.Single,System.String,System.String)">
-            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
-        </member>
-        <member name="M:HPBot.Application.NiceHashApiAdapter.GetCurrentFixedPriceAsync(System.String,System.Single)">
-            <exception cref="T:HPBot.Application.Exceptions.GetCurrentFixedPriceException"></exception>
-        </member>
-        <member name="M:HPBot.Application.NiceHashApiAdapter.RefillOrder(System.String,System.Single)">
-            <exception cref="T:HPBot.Application.Exceptions.RefillOrderException"></exception>
-        </member>
-        <member name="M:HPBot.Application.NiceHashApiAdapter.GetActiveOrdersAsync">
-            <summary>
-            Note: Active order not necessarily running, check IsRunning property
             </summary>
         </member>
         <member name="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)">

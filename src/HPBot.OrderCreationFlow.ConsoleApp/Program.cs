@@ -1,6 +1,9 @@
 ﻿using HPBot.Application;
+using HPBot.Application.Adapters;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace HPBot.OrderCreationFlow.ConsoleApp
@@ -20,13 +23,25 @@ namespace HPBot.OrderCreationFlow.ConsoleApp
 
             var logger = loggerFactory.CreateLogger<Program>();
 
-            var nhClient = new NiceHashApiClient(configuration, loggerFactory);
-            var nhAdapter = new NiceHashApiAdapter(nhClient);
-            var orderCreationService = new OrderCreationService(nhAdapter, loggerFactory);
-            var orderCancellationService = new OrderCancellationService(nhAdapter, loggerFactory);
+            HttpClient httpClient = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = new WebProxy()
+                {
+                    Address = new Uri("http://localhost:8888")
+                }
+            })
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+
+            var nhClient = new NiceHashApiPersonedClient(httpClient, configuration, loggerFactory);
+            HashpowerMarketPublicAdapter hashpowerMarketPublicAdapter = new HashpowerMarketPublicAdapter(nhClient);
+            HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter = new HashpowerMarketPrivateAdapter(nhClient);
+            var orderCreationService = new OrderCreationService(hashpowerMarketPublicAdapter, hashpowerMarketPrivateAdapter, loggerFactory);
+            var orderCancellationService = new OrderCancellationService(hashpowerMarketPrivateAdapter, loggerFactory);
 
             var orderLifecycleService = new OrderCreationFlowService(
-                orderCreationService, orderCancellationService, nhAdapter, new TwoCryptoCalcAdapter(), loggerFactory);
+                orderCreationService, orderCancellationService, hashpowerMarketPrivateAdapter, new TwoCryptoCalcAdapter(), loggerFactory);
 
             float amountBtc = 0.001F;
             float speedLimitThs = 0.01F;

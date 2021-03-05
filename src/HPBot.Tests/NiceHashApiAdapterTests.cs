@@ -1,9 +1,12 @@
 ﻿using HPBot.Application;
+using HPBot.Application.Adapters;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -16,27 +19,38 @@ namespace HPBot.Tests
         [Fact]
         public async Task OrderRefill_Success()
         {
-            NiceHashApiAdapter nhAdapter = CreateNiceHashAdapter();
+            HashpowerMarketPrivateAdapter nhAdapter = CreateNiceHashAdapter();
 
             await nhAdapter.RefillOrder("1ca8aaed-c07a-4e91-baaa-f03c02d68f94", 0.005F);
         }
 
-        private static NiceHashApiAdapter CreateNiceHashAdapter()
+        private static HashpowerMarketPrivateAdapter CreateNiceHashAdapter()
         {
-            NiceHashConfiguration nhConfiguration = NiceHashConfiguration
+            NiceHashConfiguration configuration = NiceHashConfiguration
                 .ReadFromNiceHashConfigJsonFile("test");
 
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
-            var nhClient = new NiceHashApiClient(nhConfiguration, loggerFactory);
-            var nhAdapter = new NiceHashApiAdapter(nhClient);
+            HttpClient httpClient = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = new WebProxy()
+                {
+                    Address = new Uri("http://localhost:8888")
+                }
+            })
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+
+            var nhClient = new NiceHashApiPersonedClient(httpClient, configuration, loggerFactory);
+            var nhAdapter = new HashpowerMarketPrivateAdapter(nhClient);
             return nhAdapter;
         }
 
         [Fact]
         public async Task GetActiveOrders_Success()
         {
-            NiceHashApiAdapter nhAdapter = CreateNiceHashAdapter();
+            HashpowerMarketPrivateAdapter nhAdapter = CreateNiceHashAdapter();
 
             var orders = await nhAdapter.GetActiveOrdersAsync();
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using HPBot.Application.Adapters;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,15 +11,15 @@ namespace HPBot.Application
     public class OrderRefillerService
     {
         private readonly TwoCryptoCalcAdapter twoCryptoCalcAdapter;
-        private readonly NiceHashApiAdapter niceHashApi;
+        private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly ILogger logger;
         private readonly ILogger notifier;
 
         public OrderRefillerService(TwoCryptoCalcAdapter twoCryptoCalcAdapter,
-            NiceHashApiAdapter niceHashApi, ILoggerFactory loggerFactory)
+            HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter, ILoggerFactory loggerFactory)
         {
             this.twoCryptoCalcAdapter = twoCryptoCalcAdapter ?? throw new ArgumentNullException(nameof(twoCryptoCalcAdapter));
-            this.niceHashApi = niceHashApi ?? throw new ArgumentNullException(nameof(niceHashApi));
+            this.hashpowerMarketPrivateAdapter = hashpowerMarketPrivateAdapter ?? throw new ArgumentNullException(nameof(hashpowerMarketPrivateAdapter));
 
             if(loggerFactory == null)
             {
@@ -32,7 +33,7 @@ namespace HPBot.Application
         public async Task RefillRunningOrderIfApplicableAsync(float refillAmountBtc = 0.001F, 
             float remainAmountBtcThresholdToRefill = 0.00075F)
         {
-            var runningOrder = (await niceHashApi.GetActiveOrdersAsync())
+            var runningOrder = (await hashpowerMarketPrivateAdapter.GetActiveOrdersAsync())
                 .SingleOrDefault(o => o.IsRunning);
 
             if(runningOrder == null)
@@ -64,7 +65,7 @@ namespace HPBot.Application
                                 runningOrder.RemainAmountBtc,
                                 remainAmountBtcThresholdToRefill);
 
-                            await niceHashApi.RefillOrder(runningOrder.Id, refillAmountBtc);
+                            await hashpowerMarketPrivateAdapter.RefillOrder(runningOrder.Id, refillAmountBtc);
                         }
                     }
                     else

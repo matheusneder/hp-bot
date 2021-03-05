@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using HPBot.Application.Adapters;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,12 +9,12 @@ namespace HPBot.Application
 {
     public class OrderCancellationService
     {
-        private readonly NiceHashApiAdapter niceHashApi;
+        private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly ILogger logger;
 
-        public OrderCancellationService(NiceHashApiAdapter niceHashApi, ILoggerFactory loggerFactory)
+        public OrderCancellationService(HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter, ILoggerFactory loggerFactory)
         {
-            this.niceHashApi = niceHashApi ?? throw new ArgumentNullException(nameof(niceHashApi));
+            this.hashpowerMarketPrivateAdapter = hashpowerMarketPrivateAdapter ?? throw new ArgumentNullException(nameof(hashpowerMarketPrivateAdapter));
             logger = loggerFactory?.CreateLogger<OrderCancellationService>() ?? 
                 throw new ArgumentNullException(nameof(loggerFactory));
         }
@@ -27,7 +28,7 @@ namespace HPBot.Application
             {
                 try
                 {
-                    await niceHashApi.CancelOrderAsync(orderId);
+                    await hashpowerMarketPrivateAdapter.CancelOrderAsync(orderId);
                     orderCancelled = true;
                 }
                 catch (Exception e)
@@ -35,7 +36,7 @@ namespace HPBot.Application
                     logger.LogWarning(e, "Error while trying to cancel order {OrderId}",
                         orderId);
 
-                    var freshOrderDetails = await niceHashApi.GetOrderByIdAsync(orderId);
+                    var freshOrderDetails = await hashpowerMarketPrivateAdapter.GetOrderByIdAsync(orderId);
 
                     if (freshOrderDetails == null)
                     {

@@ -19,37 +19,23 @@ namespace HPBot.Application
     public class NiceHashApiClient
     {
         public NiceHashConfiguration Configuration { get; set; }
-
-        private readonly HttpClient httpClient = new HttpClient(new HttpClientHandler()
-        {
-            Proxy = new WebProxy()
-            {
-                Address = new Uri("http://localhost:8888")
-            }
-        })
-        {
-            Timeout = TimeSpan.FromSeconds(15)
-        };
-
+        private readonly HttpClient httpClient;
         private readonly ILogger logger;
 
-        public NiceHashApiClient(NiceHashConfiguration configuration, ILoggerFactory loggerFactory)
+        public NiceHashApiClient(HttpClient httpClient, NiceHashConfiguration configuration, ILoggerFactory loggerFactory)
         {
+            this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             logger = loggerFactory?.CreateLogger<NiceHashApiClient>() ?? 
                 throw new ArgumentNullException(nameof(loggerFactory));
         }
 
-        /// <summary>
-        /// You should take care only of <see cref="NiceHashApiTechnicalIssueException"/> for <see cref="NiceHashApiSendRequestException"/>, 
-        /// <see cref="NiceHashApiReadResponseException"/> and <see cref="NiceHashApiServerException"/>.
-        /// For API client errors (400 &lt;= StatusCode &lt; 500), use <see cref="NiceHashApiClientException" />.
-        /// </summary>
-        /// <exception cref="NiceHashApiSendRequestException"></exception>
-        /// <exception cref="NiceHashApiReadResponseException"></exception>
-        /// <exception cref="NiceHashApiClientException"></exception>
-        /// <exception cref="NiceHashApiServerException"></exception>
-        public async Task<T> SendAsync<T>(HttpMethod method, string path, Dictionary<string, object> query, object body)
+        public virtual void ConfigureRequestMessage(HttpRequestMessage message, string requestId, HttpMethod method, 
+            string path, string queryString, string nonce, string time, string bodyText)
+        {
+        }
+
+        public async Task<HttpResponseMessage> SendAsync(string requestId, HttpMethod method, string path, Dictionary<string, object> query, object body)
         {
             var queryString = string.Join("&", query
                 .Select(i => $"{HttpUtility.UrlEncode(i.Key)}=" +
@@ -57,7 +43,6 @@ namespace HPBot.Application
                     .ToArray());
 
             string requestUri = $"https://{Configuration.ApiHost}{path}";
-            string requestId = Guid.NewGuid().ToString();
 
             if (!string.IsNullOrWhiteSpace(queryString))
             {
@@ -75,35 +60,38 @@ namespace HPBot.Application
                 message.Content = new StringContent(bodyText, Encoding.UTF8, "application/json");
             }
 
-            message.Headers.Add("X-Time", time);
-            message.Headers.Add("X-Nonce", nonce);
-            message.Headers.Add("X-Organization-Id", Configuration.OrganizationId);
-            message.Headers.Add("X-Request-Id", requestId);
-            string auth = CreateAuth(method, path, body, queryString, nonce, time, bodyText);
-            message.Headers.Add("X-Auth", auth);
+            ConfigureRequestMessage(message, requestId, method, path, queryString, nonce, time, bodyText);
 
-            logger.LogDebug("Initiating HTTP request; " +
+            logger.LogDebug("Initiating HTTP request {RequestId}; " +
                 "HttpMethod: '{HttpMethod}' ::" +
                 "RequestUri: '{RequestUri}' :: " +
-                "X-Time: '{Time}' :: " +
-                "X-Nonce: '{Nonce}' :: " +
-                "X-Organization-Id: '{OrganizationId}' :: " +
-                "X-Request-Id: '{RequestId}' :: " +
-                "X-Auth: '{Auth}' :: " +
                 "Body: '{Body}'",
-                method.ToString(), requestUri, time, nonce, Configuration.OrganizationId, requestId, auth, bodyText);
-
-            HttpResponseMessage httpResponse;
-            string responseText;
+                requestId, method.ToString(), requestUri, bodyText);
 
             try
             {
-                httpResponse = await httpClient.SendAsync(message);
+                return await httpClient.SendAsync(message);
             }
             catch (Exception e)
             {
                 throw new NiceHashApiSendRequestException(e);
             }
+        }
+
+        /// <summary>
+        /// You should take care only of <see cref="NiceHashApiTechnicalIssueException"/> for <see cref="NiceHashApiSendRequestException"/>, 
+        /// <see cref="NiceHashApiReadResponseException"/> and <see cref="NiceHashApiServerException"/>.
+        /// For API client errors (400 &lt;= StatusCode &lt; 500), use <see cref="NiceHashApiClientException" />.
+        /// </summary>
+        /// <exception cref="NiceHashApiSendRequestException"></exception>
+        /// <exception cref="NiceHashApiReadResponseException"></exception>
+        /// <exception cref="NiceHashApiClientException"></exception>
+        /// <exception cref="NiceHashApiServerException"></exception>
+        public async Task<T> SendAsync<T>(HttpMethod method, string path, Dictionary<string, object> query, object body)
+        {
+            string requestId = Guid.NewGuid().ToString();
+            string responseText;
+            var httpResponse = await SendAsync(requestId, method, path, query, body);
 
             try
             {
@@ -185,49 +173,6 @@ namespace HPBot.Application
             // will also throw this exception, but it's an unexpected kind of status for this scenario)
             throw new NiceHashApiServerException(httpResponse.StatusCode,
                 errorDto, responseText);
-        }
-
-        private string CreateAuth(HttpMethod method, string path, object body, string queryString, string nonce, string time, string bodyText)
-        {
-            Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-
-            var authInput = ImmutableList.Create<byte>()
-                .AddRange(iso.GetBytes(Configuration.ApiKey))
-                .Add(0)
-                .AddRange(iso.GetBytes(time))
-                .Add(0)
-                .AddRange(iso.GetBytes(nonce))
-                .Add(0)
-                // empty field
-                .Add(0)
-                .AddRange(iso.GetBytes(Configuration.OrganizationId))
-                .Add(0)
-                // empty field
-                .Add(0)
-                .AddRange(iso.GetBytes(method.ToString()))
-                .Add(0)
-                .AddRange(iso.GetBytes(path))
-                .Add(0)
-                .AddRange(iso.GetBytes(queryString))
-                ;
-
-            if (body != null)
-            {
-                authInput = authInput
-                    .Add(0)
-                    .AddRange(Encoding.UTF8.GetBytes(bodyText));
-            }
-
-            var authKey = Encoding.UTF8.GetBytes(Configuration.ApiSecret);
-
-            string auth = Configuration.ApiKey + ":" +
-                BitConverter.ToString(
-                    new HMACSHA256(authKey)
-                        .ComputeHash(authInput.ToArray()))
-                        .Replace("-", string.Empty)
-                        .ToLower();
-            
-            return auth;
         }
 
         /// <inheritdoc cref="SendAsync{T}(HttpMethod, string, Dictionary{string, object}, object)"/>

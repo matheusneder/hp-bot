@@ -6,23 +6,22 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Text.Json;
-using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 
-namespace HPBot.Application
+namespace HPBot.Application.Adapters
 {
-    public class NiceHashApiAdapter
+    public class HashpowerMarketPrivateAdapter
     {
         public NiceHashApiClient Client { get; set; }
 
-        public NiceHashApiAdapter(NiceHashApiClient client)
+        public HashpowerMarketPrivateAdapter(NiceHashApiPersonedClient client)
         {
             Client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <exception cref="CreateOrderException" />
-        public async Task<CreateOrderResult> CreateOrderAsync(string market, float ammoutBtc, float priceBtc, 
+        public async Task<CreateOrderResult> CreateOrderAsync(string market, float ammoutBtc, float priceBtc,
             float speedLimitThs, string poolId, string orderType)
         {
             try
@@ -48,7 +47,7 @@ namespace HPBot.Application
                     CanLiveTill = dto.endTs
                 };
             }
-            catch(NiceHashApiClientException e)
+            catch (NiceHashApiClientException e)
             {
                 switch (e.HttpStatusCode)
                 {
@@ -74,45 +73,10 @@ namespace HPBot.Application
             {
                 await Client.DeleteAsync($"/main/api/v2/hashpower/order/{id}");
             }
-            catch(NiceHashApiClientException e)
+            catch (NiceHashApiClientException e)
             {
                 // TODO: Map undocumented errors 
                 throw new ErrorMappingException(nameof(CancelOrderAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
-            }
-        }
-
-        /// <exception cref="GetCurrentFixedPriceException"></exception>
-        public async Task<FixedPriceResult> GetCurrentFixedPriceAsync(string market, float speedLimitThs)
-        {
-            try
-            {
-                var dto = await Client.PostAsync<FixedPriceResultDto>("/main/api/v2/hashpower/orders/fixedPrice",
-                    new
-                    {
-                        limit = speedLimitThs,
-                        market = market,
-                        algorithm = "DAGGERHASHIMOTO"
-                    });
-
-                return new FixedPriceResult()
-                {
-                    FixedPriceBtc = float.Parse(dto.fixedPrice, CultureInfo.InvariantCulture.NumberFormat),
-                    MaxSpeedThs = float.Parse(dto.fixedMax, CultureInfo.InvariantCulture.NumberFormat)
-                };
-            }
-            catch(NiceHashApiClientException e)
-            {
-                if (e.HttpStatusCode == HttpStatusCode.BadRequest)
-                {
-#pragma warning disable S1066 // Collapsible "if" statements should be merged
-                    if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5012))
-#pragma warning restore S1066 // Collapsible "if" statements should be merged
-                    {
-                        throw new GetCurrentFixedPriceException(GetCurrentFixedPriceException.GetCurrentFixedPriceErrorReason.FixedOrderPriceQuerySpeedLimitTooBig);
-                    }
-                }
-
-                throw new ErrorMappingException(nameof(GetCurrentFixedPriceAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
             }
         }
 
@@ -186,7 +150,7 @@ namespace HPBot.Application
                     }
                 );
             }
-            catch(NiceHashApiClientException e)
+            catch (NiceHashApiClientException e)
             {
                 // TODO: Map undocumented errors if any
                 throw new ErrorMappingException(nameof(GetActiveOrdersAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
@@ -207,78 +171,15 @@ namespace HPBot.Application
                     Status = dto.status.code
                 };
             }
-            catch(NiceHashApiClientException e)
+            catch (NiceHashApiClientException e)
             {
-                if(e.HttpStatusCode == HttpStatusCode.NotFound)
+                if (e.HttpStatusCode == HttpStatusCode.NotFound)
                 {
                     return null;
                 }
 
                 // TODO: Map undocumented errors if any
                 throw new ErrorMappingException(nameof(GetOrderByIdAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
-            }
-        }
-
-        //POST /exchange/api/v2/order?market=TETHTBTC&side=SELL&type=MARKET&quantity=0.89
-        public async Task<EthToBtcExchangeResult> EthToBtcExchangeAsync(float quantityEth)
-        {
-            var query = new Dictionary<string, object>()
-            {
-                { "market", "ETHBTC" },
-                { "side", "SELL" },
-                { "type", "MARKET" },
-                { "quantity", quantityEth }
-            };
-
-            try
-            {
-                var dto = await Client.PostAsync<ExchangeResultDto>("/exchange/api/v2/order", query, null);
-
-                return new EthToBtcExchangeResult()
-                {
-                    OrderId = dto.orderId,
-                    AmountEthToSell = dto.origQty,
-                    AmountEthSold = dto.executedQty,
-                    AmountBtcReceived = dto.executedSndQty,
-                    State = dto.state == "FULL" ?
-                        EthToBtcExchangeResult.ExchangeState.Full :
-                        throw new MappingException<EthToBtcExchangeResult>(nameof(EthToBtcExchangeResult.State), dto.state)
-                };
-            }
-            catch(NiceHashApiClientException e)
-            {
-                // TODO: Map undocumented errors if any
-                throw new ErrorMappingException(nameof(GetOrderByIdAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
-            }
-        }
-
-        public async Task<IEnumerable<ListDepositResultItem>> GetEthDepositsAsync(DateTimeOffset since)
-        {
-            var query = new Dictionary<string, object>()
-            {
-                //statuses=COMPLETED&op=GT&timestamp=1612795336317&page=0&size=10
-                { "statuses", "COMPLETED" },
-                { "op", "GT" },
-                { "timestamp", since.ToUnixTimeMilliseconds() },
-                { "page", 0 },
-                { "size", 10 }
-            };
-
-            try
-            {
-                var dto = await Client.GetAsync<ListDepositResultDto>("/main/api/v2/accounting/deposits/ETH", query);
-
-                return dto.list.Select(i => new ListDepositResultItem()
-                {
-                    Id = i.id,
-                    CreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(i.created),
-                    Amount = float.Parse(i.amount, CultureInfo.InvariantCulture.NumberFormat)
-                });
-            }
-            catch(NiceHashApiClientException e)
-            {
-                // TODO: Map undocumented errors if any
-                throw new ErrorMappingException(nameof(GetEthDepositsAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
             }
         }
     }

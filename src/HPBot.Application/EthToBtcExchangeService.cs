@@ -1,4 +1,5 @@
-﻿using HPBot.Application.Models;
+﻿using HPBot.Application.Adapters;
+using HPBot.Application.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -10,26 +11,32 @@ namespace HPBot.Application
 {
     public class EthToBtcExchangeService
     {
-        private readonly NiceHashApiAdapter niceHashApi;
         private readonly ILogger logger;
         private readonly ILogger notifier;
+        private readonly ExchangePrivateAdapter exchangePrivateAdapter;
+        private readonly WalletPrivateAdapter walletPrivateAdapter;
 
-        public EthToBtcExchangeService(NiceHashApiAdapter niceHashApi, ILoggerFactory loggerFactory)
-        {
-            this.niceHashApi = niceHashApi ?? throw new ArgumentNullException(nameof(niceHashApi));
+        public EthToBtcExchangeService(ExchangePrivateAdapter exchangePrivateAdapter, 
+            WalletPrivateAdapter walletPrivateAdapter, ILoggerFactory loggerFactory)
+        {           
+            this.exchangePrivateAdapter = exchangePrivateAdapter ?? 
+                throw new ArgumentNullException(nameof(exchangePrivateAdapter));
+
+            this.walletPrivateAdapter = walletPrivateAdapter ?? 
+                throw new ArgumentNullException(nameof(walletPrivateAdapter));
             
-            if(loggerFactory == null)
+            if (loggerFactory == null)
             {
                 throw new ArgumentNullException(nameof(loggerFactory));
             }
-            
+
             logger = loggerFactory.CreateLogger<EthToBtcExchangeService>();
             notifier = loggerFactory.CreateNotifier<EthToBtcExchangeService>();
         }
 
         public async Task<EthToBtcExchangeResult> PerformExchangeIfHasNewDeposit(DateTimeOffset since)
         {
-            var deposits = await niceHashApi.GetEthDepositsAsync(since);
+            var deposits = await walletPrivateAdapter.GetEthDepositsAsync(since);
 
             if (deposits.Any())
             {
@@ -42,7 +49,7 @@ namespace HPBot.Application
                     totalEth,
                     amountEthToExchange);
 
-                var exchangeResult = await niceHashApi.EthToBtcExchangeAsync(amountEthToExchange);
+                var exchangeResult = await exchangePrivateAdapter.EthToBtcExchangeAsync(amountEthToExchange);
                 exchangeResult.LastDepositCreatedAt = deposits.Max(d => d.CreatedAt);
 
                 notifier.LogInformation(
