@@ -4,6 +4,9 @@
         <name>HPBot.Application</name>
     </assembly>
     <members>
+        <member name="M:HPBot.Application.Adapters.ExchangePrivateAdapter.ExchangeAsync(System.String,System.Single)">
+            <exception cref="T:HPBot.Application.Exceptions.ExchangeException"></exception>
+        </member>
         <member name="M:HPBot.Application.Adapters.HashpowerMarketPrivateAdapter.CreateOrderAsync(System.String,System.Single,System.Single,System.Single,System.String,System.String)">
             <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
         </member>

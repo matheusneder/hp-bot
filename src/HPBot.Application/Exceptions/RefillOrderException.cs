@@ -8,7 +8,7 @@ namespace HPBot.Application.Exceptions
     [Serializable]
     public class RefillOrderException : AppException
     {
-        public RefillOrderException(string orderId, float amountBtc, RefillOrderExceptionReason reason)
+        public RefillOrderException(string orderId, float amountBtc, RefillOrderErrorReason reason)
         {
             OrderId = orderId;
             AmountBtc = amountBtc;
@@ -21,9 +21,9 @@ namespace HPBot.Application.Exceptions
 
         public string OrderId { get; }
         public float AmountBtc { get; }
-        public RefillOrderExceptionReason Reason { get; }
+        public RefillOrderErrorReason Reason { get; }
 
-        public enum RefillOrderExceptionReason
+        public enum RefillOrderErrorReason
         {
             InsufficientBalanceInAccount = 3001,
             RefillOrderAmountBelowMinimalOrderAmount = 5090

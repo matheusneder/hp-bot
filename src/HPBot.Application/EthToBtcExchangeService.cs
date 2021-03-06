@@ -50,7 +50,7 @@ namespace HPBot.Application
                     amountEthToExchange);
 
                 var exchangeResult = await exchangePrivateAdapter.EthToBtcExchangeAsync(amountEthToExchange);
-                exchangeResult.LastDepositCreatedAt = deposits.Max(d => d.CreatedAt);
+                exchangeResult.LastOrderResponseTime = deposits.Max(d => d.CreatedAt);
 
                 notifier.LogInformation(
                     "Exchanged OrderId: {OrderId} :: {AmountEth} ETH -> {AmountBtc} BTC; State: {State}",

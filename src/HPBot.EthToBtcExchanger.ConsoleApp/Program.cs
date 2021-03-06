@@ -55,7 +55,7 @@ namespace HPBot.EthToBtcExchanger.ConsoleApp
                     if(exchangeResult != null)
                     {
                         File.WriteAllText(lastDepositDataFile, exchangeResult
-                            .LastDepositCreatedAt.ToUnixTimeMilliseconds().ToString());
+                            .LastOrderResponseTime.ToUnixTimeMilliseconds().ToString());
                     }
                 }
                 catch(Exception e)

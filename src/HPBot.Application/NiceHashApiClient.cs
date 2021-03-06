@@ -144,7 +144,7 @@ namespace HPBot.Application
                         $"Response text: '{responseText}'.", e);
                 }
 
-                throw new NiceHashApiClientException(httpResponse.StatusCode, errorDto);
+                throw new NiceHashApiClientException(httpResponse.StatusCode, errorDto, responseText);
             }
 
             logger.LogWarning("HTTP request {RequestId} server error. Status: {HttpStatus}",

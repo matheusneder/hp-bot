@@ -32,5 +32,7 @@ namespace HPBot.Tests
 
         public static NiceHashApiClient NiceHashApiClient =>
             new NiceHashApiClient(HttpClient, Configuration, LoggerFactory);
+
+        public const string NiceHashIdPattern = "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$";
     }
 }

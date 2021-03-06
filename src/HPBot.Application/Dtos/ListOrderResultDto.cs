@@ -64,7 +64,7 @@ namespace HPBot.Application.Dtos
             public string availableAmount { get; set; } 
             public string payedAmount { get; set; } 
             public DateTimeOffset endTs { get; set; } // order life limit
-            public int estimateDurationInSeconds { get; set; }
+            public int estimateDurationInSeconds { get; set; } = -2; // -2 value is for integration test purpose
             public bool alive { get; set; }
             public DateTimeOffset startTs { get; set; } // order created
             public string price { get; set; }

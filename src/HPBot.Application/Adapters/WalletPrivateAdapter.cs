@@ -19,7 +19,12 @@ namespace HPBot.Application.Adapters
             Client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
-        public async Task<IEnumerable<ListDepositResultItem>> GetEthDepositsAsync(DateTimeOffset since)
+        public Task<IEnumerable<ListDepositResultItem>> GetEthDepositsAsync(DateTimeOffset since)
+        {
+            return GetDepositsAsync("ETH", since);
+        }
+
+        public async Task<IEnumerable<ListDepositResultItem>> GetDepositsAsync(string currency, DateTimeOffset since)
         {
             var query = new Dictionary<string, object>()
             {
@@ -33,19 +38,20 @@ namespace HPBot.Application.Adapters
 
             try
             {
-                var dto = await Client.GetAsync<ListDepositResultDto>("/main/api/v2/accounting/deposits/ETH", query);
+                var dto = await Client.GetAsync<ListDepositResultDto>($"/main/api/v2/accounting/deposits/{currency}", query);
 
                 return dto.list.Select(i => new ListDepositResultItem()
                 {
                     Id = i.id,
                     CreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(i.created),
-                    Amount = float.Parse(i.amount, CultureInfo.InvariantCulture.NumberFormat)
+                    Amount = float.Parse(i.amount, CultureInfo.InvariantCulture.NumberFormat),
+                    Currency = i.currency.enumName
                 });
             }
             catch (NiceHashApiClientException e)
             {
                 // TODO: Map undocumented errors if any
-                throw new ErrorMappingException(nameof(GetEthDepositsAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
+                throw new ErrorMappingException(nameof(GetDepositsAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
             }
         }
     }

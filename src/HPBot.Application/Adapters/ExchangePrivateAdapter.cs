@@ -3,7 +3,10 @@ using HPBot.Application.Exceptions;
 using HPBot.Application.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace HPBot.Application.Adapters
@@ -17,15 +20,21 @@ namespace HPBot.Application.Adapters
             Client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
+        public Task<EthToBtcExchangeResult> EthToBtcExchangeAsync(float amountEth)
+        {
+            return ExchangeAsync("ETHBTC", amountEth);
+        }
+
         //POST /exchange/api/v2/order?market=TETHTBTC&side=SELL&type=MARKET&quantity=0.89
-        public async Task<EthToBtcExchangeResult> EthToBtcExchangeAsync(float quantityEth)
+        /// <exception cref="ExchangeException"></exception>
+        public async Task<EthToBtcExchangeResult> ExchangeAsync(string market, float amount)
         {
             var query = new Dictionary<string, object>()
             {
-                { "market", "ETHBTC" },
+                { "market", market },
                 { "side", "SELL" },
                 { "type", "MARKET" },
-                { "quantity", quantityEth }
+                { "quantity", amount }
             };
 
             try
@@ -40,13 +49,32 @@ namespace HPBot.Application.Adapters
                     AmountBtcReceived = dto.executedSndQty,
                     State = dto.state == "FULL" ?
                         EthToBtcExchangeResult.ExchangeState.Full :
-                        throw new MappingException<EthToBtcExchangeResult>(nameof(EthToBtcExchangeResult.State), dto.state)
+                        throw new MappingException<EthToBtcExchangeResult>(nameof(EthToBtcExchangeResult.State), dto.state),
+                    LastOrderResponseTime = DateTimeOffset.FromUnixTimeSeconds(0)
+                        .AddTicks(
+                            (long)
+                            (TimeSpan.TicksPerSecond * (float)dto.lastResponseTime / 1000000F))
                 };
             }
             catch (NiceHashApiClientException e)
             {
-                // TODO: Map undocumented errors if any
-                throw new ErrorMappingException(nameof(EthToBtcExchangeAsync), e.HttpStatusCode, e.NiceHashApiErrorDto);
+                switch (e.HttpStatusCode)
+                {
+                    case System.Net.HttpStatusCode.BadRequest:
+
+                        // Exhange api error response schema does not respect NiceHashApiErrorDto
+                        // So its being deserialized from RawResponseText to NiceHashExchangeApiErrorDto here
+                        // TODO: Let's see further implementations (if has) in order to think about generilize or not this contract
+
+                        var errorDto = JsonSerializer.Deserialize<NiceHashExchangeApiErrorDto>(e.RawResponseText);
+
+                        if (errorDto?.error?.status == 1219)
+                            throw new ExchangeException(ExchangeException.ExchangeErrorReason.QuantityTooSmall, market, amount);
+                        
+                        break;
+                }
+
+                throw new ErrorMappingException(nameof(ExchangeAsync), e.HttpStatusCode, e.RawResponseText);
             }
         }
     }

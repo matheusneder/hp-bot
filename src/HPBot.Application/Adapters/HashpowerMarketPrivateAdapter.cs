@@ -44,7 +44,8 @@ namespace HPBot.Application.Adapters
                 {
                     Id = dto.id,
                     PriceBtc = float.Parse(dto.price, CultureInfo.InvariantCulture.NumberFormat),
-                    Expires = dto.endTs
+                    Expires = dto.endTs,
+                    MarketFactor = float.Parse(dto.marketFactor, CultureInfo.InvariantCulture.NumberFormat)
                 };
             }
             catch (NiceHashApiClientException e)
@@ -101,10 +102,10 @@ namespace HPBot.Application.Adapters
                     case HttpStatusCode.BadRequest:
                     case HttpStatusCode.Conflict:
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5090))
-                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderExceptionReason
+                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderErrorReason
                                 .RefillOrderAmountBelowMinimalOrderAmount);
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 3001))
-                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderExceptionReason
+                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderErrorReason
                                 .InsufficientBalanceInAccount);
                         break;
                 }
@@ -149,7 +150,8 @@ namespace HPBot.Application.Adapters
                         CreatedAt = i.startTs,
                         EstimateDurationInSeconds = i.estimateDurationInSeconds,
                         SpentWithoutTaxesAmountBtc = float.Parse(i.payedAmount, CultureInfo.InvariantCulture.NumberFormat),
-                        PriceBtc = float.Parse(i.price, CultureInfo.InvariantCulture.NumberFormat)
+                        PriceBtc = float.Parse(i.price, CultureInfo.InvariantCulture.NumberFormat),
+                        MarketFactor = float.Parse(i.marketFactor, CultureInfo.InvariantCulture.NumberFormat)
                     }
                 );
             }
@@ -171,7 +173,8 @@ namespace HPBot.Application.Adapters
                     Id = dto.id,
                     Expires = dto.endTs,
                     PriceBtc = float.Parse(dto.price, CultureInfo.InvariantCulture.NumberFormat),
-                    Status = dto.status.code
+                    Status = dto.status.code,
+                    MarketFactor = float.Parse(dto.marketFactor, CultureInfo.InvariantCulture.NumberFormat)
                 };
             }
             catch (NiceHashApiClientException e)

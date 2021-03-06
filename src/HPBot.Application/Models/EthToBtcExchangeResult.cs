@@ -11,7 +11,7 @@ namespace HPBot.Application.Models
         public float AmountEthSold { get; set; }
         public float AmountBtcReceived { get; set; }
         public ExchangeState State { get; set; }
-        public DateTimeOffset LastDepositCreatedAt { get; set; }
+        public DateTimeOffset LastOrderResponseTime { get; set; }
 
         public enum ExchangeState
         {

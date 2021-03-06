@@ -48,8 +48,10 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             var ex = await Assert.ThrowsAsync<RefillOrderException>(async () =>
                 await HPPrivateAdapter.RefillOrder(createdOrder.Id, refillAmount));
 
-            Assert.Equal(RefillOrderException.RefillOrderExceptionReason.RefillOrderAmountBelowMinimalOrderAmount, 
+            Assert.Equal(RefillOrderException.RefillOrderErrorReason.RefillOrderAmountBelowMinimalOrderAmount, 
                 ex.Reason);
+            Assert.Matches(Helpers.NiceHashIdPattern, ex.OrderId);
+            Assert.Equal(amountBtc, ex.AmountBtc);
 
             await CancelOrderAsync(createdOrder.Id);
         }
@@ -61,12 +63,14 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             float priceBtc = 1.0F;
             float speedLimitThs = 0.01F;
             float refillAmount = 0.005F;
+            float expectedMarketFactor = 1000000000000F;
 
             var createdOrder = await HPPrivateAdapter
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD");
 
             Assert.Equal(priceBtc, createdOrder.PriceBtc);
             Assert.True(createdOrder.Expires > DateTimeOffset.Now.AddHours(23));
+            Assert.Equal(expectedMarketFactor, createdOrder.MarketFactor);
 
             // Retriving
             var retrivedOrder = await HPPrivateAdapter.GetOrderByIdAsync(createdOrder.Id);
@@ -75,6 +79,7 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.Equal(priceBtc, retrivedOrder.PriceBtc);
             Assert.Equal("ACTIVE", retrivedOrder.Status);
             Assert.True(retrivedOrder.Expires > DateTimeOffset.Now.AddHours(23));
+            Assert.Equal(expectedMarketFactor, retrivedOrder.MarketFactor);
 
             // Refilling!
             await HPPrivateAdapter.RefillOrder(createdOrder.Id, refillAmount);
@@ -87,8 +92,9 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.Equal(priceBtc, retrivedOrderFromActiveOrderList.PriceBtc);
             Assert.False(retrivedOrderFromActiveOrderList.IsRunning);
             Assert.True(retrivedOrderFromActiveOrderList.CreatedAt > DateTimeOffset.Now.AddSeconds(-10));
-            Assert.True(retrivedOrderFromActiveOrderList.CreatedAt < DateTimeOffset.Now);
+            Assert.True(retrivedOrderFromActiveOrderList.CreatedAt < DateTimeOffset.Now.AddSeconds(10));
             Assert.True(retrivedOrderFromActiveOrderList.EstimateDurationInSeconds >= 0);
+            Assert.Equal(expectedMarketFactor, retrivedOrderFromActiveOrderList.MarketFactor);
 
             // Check if refill worked
             Assert.Equal(amountBtc + refillAmount, retrivedOrderFromActiveOrderList.AmountBtc);

@@ -12,11 +12,13 @@ namespace HPBot.Application.Exceptions
     {
         public HttpStatusCode HttpStatusCode { get; }
         public NiceHashApiErrorDto NiceHashApiErrorDto { get; }
+        public string RawResponseText { get; }
 
-        public NiceHashApiClientException(HttpStatusCode statusCode, NiceHashApiErrorDto niceHashApiErrorDto)
+        public NiceHashApiClientException(HttpStatusCode statusCode, NiceHashApiErrorDto niceHashApiErrorDto, string rawResponseText)
         {
             HttpStatusCode = statusCode;
             NiceHashApiErrorDto = niceHashApiErrorDto;
+            RawResponseText = rawResponseText;
         }
 
         protected NiceHashApiClientException(SerializationInfo info, StreamingContext context) : base(info, context)
