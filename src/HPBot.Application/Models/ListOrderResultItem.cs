@@ -29,7 +29,7 @@ namespace HPBot.Application.Models
         /// <summary>
         /// Estimated amount of time till order balance get fully consumed
         /// </summary>
-        public int EstimateDurationInSeconds { get; set; }
+        public int EstimateDurationInSeconds { get; set; } = -1;
         public DateTimeOffset CreatedAt { get; set; }
     }
 }

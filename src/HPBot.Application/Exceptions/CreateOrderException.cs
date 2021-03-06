@@ -22,7 +22,6 @@ namespace HPBot.Application.Exceptions
         public enum CreateOrderErrorReason
         {
             InsufficientBalanceInAccount = 3001,
-            GenericError = 5054,
             PriceChanged = 5056,
             OrderAmountTooSmall = 5067
         }

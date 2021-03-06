@@ -27,6 +27,10 @@ namespace HPBot.Tests
         public static NiceHashConfiguration Configuration => NiceHashConfiguration
                 .ReadFromNiceHashConfigJsonFile("test");
 
-        public static NiceHashApiPersonedClient NiceHashApiPersonedClient => new NiceHashApiPersonedClient(HttpClient, Configuration, LoggerFactory);
+        public static NiceHashApiPersonedClient NiceHashApiPersonedClient => 
+            new NiceHashApiPersonedClient(HttpClient, Configuration, LoggerFactory);
+
+        public static NiceHashApiClient NiceHashApiClient =>
+            new NiceHashApiClient(HttpClient, Configuration, LoggerFactory);
     }
 }

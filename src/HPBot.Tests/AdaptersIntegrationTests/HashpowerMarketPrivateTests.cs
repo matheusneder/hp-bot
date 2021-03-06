@@ -12,13 +12,13 @@ namespace HPBot.Tests.AdaptersIntegrationTests
 {
     public class HashpowerMarketPrivateTests
     {
-        private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter =
+        private HashpowerMarketPrivateAdapter HPPrivateAdapter =>
             new HashpowerMarketPrivateAdapter(Helpers.NiceHashApiPersonedClient);
 
         [Fact]
         public async Task Hashpower_OrderNotFound_Success()
         {
-            Assert.Null(await hashpowerMarketPrivateAdapter.GetOrderByIdAsync(Guid.NewGuid().ToString().ToLower()));
+            Assert.Null(await HPPrivateAdapter.GetOrderByIdAsync(Guid.NewGuid().ToString().ToLower()));
         }
 
         [Fact]
@@ -28,7 +28,7 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             float priceBtc = 1.0F;
             float speedLimitThs = 0.05F;
 
-            var ex = await Assert.ThrowsAsync<CreateOrderException>(async () => await hashpowerMarketPrivateAdapter
+            var ex = await Assert.ThrowsAsync<CreateOrderException>(async () => await HPPrivateAdapter
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD"));
 
             Assert.Equal(CreateOrderException.CreateOrderErrorReason.OrderAmountTooSmall, ex.Reason);
@@ -42,11 +42,11 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             float speedLimitThs = 0.01F;
             float refillAmount = 0.001F;
 
-            var createdOrder = await hashpowerMarketPrivateAdapter
+            var createdOrder = await HPPrivateAdapter
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD");
 
             var ex = await Assert.ThrowsAsync<RefillOrderException>(async () =>
-                await hashpowerMarketPrivateAdapter.RefillOrder(createdOrder.Id, refillAmount));
+                await HPPrivateAdapter.RefillOrder(createdOrder.Id, refillAmount));
 
             Assert.Equal(RefillOrderException.RefillOrderExceptionReason.RefillOrderAmountBelowMinimalOrderAmount, 
                 ex.Reason);
@@ -62,14 +62,14 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             float speedLimitThs = 0.01F;
             float refillAmount = 0.005F;
 
-            var createdOrder = await hashpowerMarketPrivateAdapter
+            var createdOrder = await HPPrivateAdapter
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD");
 
             Assert.Equal(priceBtc, createdOrder.PriceBtc);
             Assert.True(createdOrder.Expires > DateTimeOffset.Now.AddHours(23));
 
             // Retriving
-            var retrivedOrder = await hashpowerMarketPrivateAdapter.GetOrderByIdAsync(createdOrder.Id);
+            var retrivedOrder = await HPPrivateAdapter.GetOrderByIdAsync(createdOrder.Id);
 
             Assert.Equal(createdOrder.Id, retrivedOrder.Id);
             Assert.Equal(priceBtc, retrivedOrder.PriceBtc);
@@ -77,16 +77,18 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.True(retrivedOrder.Expires > DateTimeOffset.Now.AddHours(23));
 
             // Refilling!
-            await hashpowerMarketPrivateAdapter.RefillOrder(createdOrder.Id, refillAmount);
+            await HPPrivateAdapter.RefillOrder(createdOrder.Id, refillAmount);
 
             // Getting active orders
             var retrivedOrderFromActiveOrderList =
-                (await hashpowerMarketPrivateAdapter.GetActiveOrdersAsync()).Single(o => o.Id == createdOrder.Id);
+                (await HPPrivateAdapter.GetActiveOrdersAsync()).Single(o => o.Id == createdOrder.Id);
 
             Assert.Equal(createdOrder.Id, retrivedOrderFromActiveOrderList.Id);
             Assert.Equal(priceBtc, retrivedOrderFromActiveOrderList.PriceBtc);
             Assert.False(retrivedOrderFromActiveOrderList.IsRunning);
+            Assert.True(retrivedOrderFromActiveOrderList.CreatedAt > DateTimeOffset.Now.AddSeconds(-10));
             Assert.True(retrivedOrderFromActiveOrderList.CreatedAt < DateTimeOffset.Now);
+            Assert.True(retrivedOrderFromActiveOrderList.EstimateDurationInSeconds >= 0);
 
             // Check if refill worked
             Assert.Equal(amountBtc + refillAmount, retrivedOrderFromActiveOrderList.AmountBtc);
@@ -107,10 +109,10 @@ namespace HPBot.Tests.AdaptersIntegrationTests
 
         private async Task CancelOrderAsync(string orderId)
         {
-            await hashpowerMarketPrivateAdapter.CancelOrderAsync(orderId);
+            await HPPrivateAdapter.CancelOrderAsync(orderId);
 
             // Check if order was cancelled
-            Assert.DoesNotContain((await hashpowerMarketPrivateAdapter.GetActiveOrdersAsync()),
+            Assert.DoesNotContain((await HPPrivateAdapter.GetActiveOrdersAsync()),
                 o => o.Id == orderId);
         }
     }

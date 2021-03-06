@@ -53,8 +53,8 @@ namespace HPBot.Application.Adapters
                 {
                     case HttpStatusCode.BadRequest:
                     case HttpStatusCode.Conflict:
-                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5054))
-                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason.GenericError);
+                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5054)) // Generic Error
+                            throw new NiceHashApiServerException(e.HttpStatusCode, e.NiceHashApiErrorDto, null);
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5056))
                             throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason.PriceChanged);
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 3001))
