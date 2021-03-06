@@ -44,7 +44,7 @@ namespace HPBot.Application.Adapters
                 {
                     Id = dto.id,
                     PriceBtc = float.Parse(dto.price, CultureInfo.InvariantCulture.NumberFormat),
-                    CanLiveTill = dto.endTs
+                    Expires = dto.endTs
                 };
             }
             catch (NiceHashApiClientException e)
@@ -60,6 +60,9 @@ namespace HPBot.Application.Adapters
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 3001))
                             throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason
                                 .InsufficientBalanceInAccount);
+                        if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5067))
+                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason
+                                .OrderAmountTooSmall);
                         break;
                 }
 
@@ -142,10 +145,10 @@ namespace HPBot.Application.Adapters
                         AmountBtc = float.Parse(i.amount, CultureInfo.InvariantCulture.NumberFormat),
                         IsRunning = i.alive,
                         AvailableAmountBtc = float.Parse(i.availableAmount, CultureInfo.InvariantCulture.NumberFormat),
-                        CanLiveTill = i.endTs,
+                        Expires = i.endTs,
                         CreatedAt = i.startTs,
                         EstimateDurationInSeconds = i.estimateDurationInSeconds,
-                        PayedAmountBtc = float.Parse(i.payedAmount, CultureInfo.InvariantCulture.NumberFormat),
+                        SpentWithoutTaxesAmountBtc = float.Parse(i.payedAmount, CultureInfo.InvariantCulture.NumberFormat),
                         PriceBtc = float.Parse(i.price, CultureInfo.InvariantCulture.NumberFormat)
                     }
                 );
@@ -166,7 +169,7 @@ namespace HPBot.Application.Adapters
                 return new OrderDetailResult()
                 {
                     Id = dto.id,
-                    CanLiveTill = dto.endTs,
+                    Expires = dto.endTs,
                     PriceBtc = float.Parse(dto.price, CultureInfo.InvariantCulture.NumberFormat),
                     Status = dto.status.code
                 };

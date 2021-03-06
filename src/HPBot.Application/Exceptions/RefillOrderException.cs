@@ -15,11 +15,7 @@ namespace HPBot.Application.Exceptions
             Reason = reason;
         }
 
-        public RefillOrderException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        public RefillOrderException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected RefillOrderException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 
@@ -31,7 +27,8 @@ namespace HPBot.Application.Exceptions
         {
             InsufficientBalanceInAccount = 3001,
             RefillOrderAmountBelowMinimalOrderAmount = 5090
-
         }
+
+        public override string Message => $"Reason: {Reason}; OrderId: {OrderId}; AmountBtc: {AmountBtc}";
     }
 }

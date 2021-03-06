@@ -19,12 +19,12 @@ namespace HPBot.Tests
         [Fact]
         public async Task OrderRefill_Success()
         {
-            HashpowerMarketPrivateAdapter nhAdapter = CreateNiceHashAdapter();
+            HashpowerMarketPrivateAdapter nhAdapter = CreateHashpowerMarketPrivateAdapter();
 
             await nhAdapter.RefillOrder("1ca8aaed-c07a-4e91-baaa-f03c02d68f94", 0.005F);
         }
 
-        private static HashpowerMarketPrivateAdapter CreateNiceHashAdapter()
+        private static HashpowerMarketPrivateAdapter CreateHashpowerMarketPrivateAdapter()
         {
             NiceHashConfiguration configuration = NiceHashConfiguration
                 .ReadFromNiceHashConfigJsonFile("test");
@@ -44,13 +44,14 @@ namespace HPBot.Tests
 
             var nhClient = new NiceHashApiPersonedClient(httpClient, configuration, loggerFactory);
             var nhAdapter = new HashpowerMarketPrivateAdapter(nhClient);
+
             return nhAdapter;
         }
 
         [Fact]
         public async Task GetActiveOrders_Success()
         {
-            HashpowerMarketPrivateAdapter nhAdapter = CreateNiceHashAdapter();
+            HashpowerMarketPrivateAdapter nhAdapter = CreateHashpowerMarketPrivateAdapter();
 
             var orders = await nhAdapter.GetActiveOrdersAsync();
 

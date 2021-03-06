@@ -23,7 +23,8 @@ namespace HPBot.Application.Exceptions
         {
             InsufficientBalanceInAccount = 3001,
             GenericError = 5054,
-            PriceChanged = 5056
+            PriceChanged = 5056,
+            OrderAmountTooSmall = 5067
         }
 
         public override string Message => $"Reason: {Reason}";

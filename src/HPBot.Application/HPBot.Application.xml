@@ -46,7 +46,7 @@
             Total contracted including refills minus taxes
             </summary>
         </member>
-        <member name="P:HPBot.Application.Models.ListOrderResultItem.PayedAmountBtc">
+        <member name="P:HPBot.Application.Models.ListOrderResultItem.SpentWithoutTaxesAmountBtc">
             <summary>
             Spent amount (not refundable)
             </summary>

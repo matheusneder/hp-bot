@@ -48,12 +48,12 @@ namespace HPBot.Application
                 {
                     if (runningOrder.RemainAmountBtc <= remainAmountBtcThresholdToRefill)
                     {
-                        if (runningOrder.CanLiveTill - DateTimeOffset.Now < TimeSpan
+                        if (runningOrder.Expires - DateTimeOffset.Now < TimeSpan
                             .FromMinutes(1440F * (refillAmountBtc + runningOrder.RemainAmountBtc) / (runningOrder.PriceBtc * 0.01F)))
                         {
                             logger.LogInformation("Skiping refill order {OrderId} due it is near do expire (CanLiveTill).",
                                 runningOrder.Id,
-                                runningOrder.CanLiveTill);
+                                runningOrder.Expires);
                         }
                         else
                         {

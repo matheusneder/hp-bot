@@ -19,9 +19,11 @@ namespace HPBot.Application.Models
         /// <summary>
         /// Spent amount (not refundable)
         /// </summary>
-        public float PayedAmountBtc { get; set; }
-        
-        public float RemainAmountBtc => AvailableAmountBtc - PayedAmountBtc;
+        public float SpentWithoutTaxesAmountBtc { get; set; }
+
+        public float TaxesAmountBtc => AmountBtc - AvailableAmountBtc - SpentWithoutTaxesAmountBtc;
+
+        public float RemainAmountBtc => AvailableAmountBtc - SpentWithoutTaxesAmountBtc;
 
         public bool IsRunning { get; set; }
         /// <summary>
