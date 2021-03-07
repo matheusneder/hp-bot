@@ -51,7 +51,7 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.Equal(RefillOrderException.RefillOrderErrorReason.RefillOrderAmountBelowMinimalOrderAmount, 
                 ex.Reason);
             Assert.Matches(Helpers.NiceHashIdPattern, ex.OrderId);
-            Assert.Equal(amountBtc, ex.AmountBtc);
+            Assert.Equal(refillAmount, ex.AmountBtc);
 
             await CancelOrderAsync(createdOrder.Id);
         }
