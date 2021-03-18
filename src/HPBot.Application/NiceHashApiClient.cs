@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using HPBot.Application.Dtos;
+using HPBot.Application.Exceptions;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -17,28 +19,23 @@ namespace HPBot.Application
     public class NiceHashApiClient
     {
         public NiceHashConfiguration Configuration { get; set; }
-
-        private readonly HttpClient httpClient = new HttpClient(new HttpClientHandler()
-        {
-            Proxy = new WebProxy()
-            {
-                Address = new Uri("http://localhost:8888")
-            }
-        })
-        {
-            Timeout = TimeSpan.FromSeconds(15)
-        };
-
+        private readonly HttpClient httpClient;
         private readonly ILogger logger;
 
-        public NiceHashApiClient(NiceHashConfiguration configuration, ILoggerFactory loggerFactory)
+        public NiceHashApiClient(HttpClient httpClient, NiceHashConfiguration configuration, ILoggerFactory loggerFactory)
         {
+            this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             logger = loggerFactory?.CreateLogger<NiceHashApiClient>() ?? 
                 throw new ArgumentNullException(nameof(loggerFactory));
         }
 
-        public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, Dictionary<string, object> query, object body)
+        public virtual void ConfigureRequestMessage(HttpRequestMessage message, string requestId, HttpMethod method, 
+            string path, string queryString, string nonce, string time, string bodyText)
+        {
+        }
+
+        public async Task<HttpResponseMessage> SendAsync(string requestId, HttpMethod method, string path, Dictionary<string, object> query, object body)
         {
             var queryString = string.Join("&", query
                 .Select(i => $"{HttpUtility.UrlEncode(i.Key)}=" +
@@ -46,7 +43,6 @@ namespace HPBot.Application
                     .ToArray());
 
             string requestUri = $"https://{Configuration.ApiHost}{path}";
-            string requestId = Guid.NewGuid().ToString();
 
             if (!string.IsNullOrWhiteSpace(queryString))
             {
@@ -64,109 +60,155 @@ namespace HPBot.Application
                 message.Content = new StringContent(bodyText, Encoding.UTF8, "application/json");
             }
 
-            message.Headers.Add("X-Time", time);
-            message.Headers.Add("X-Nonce", nonce);
-            message.Headers.Add("X-Organization-Id", Configuration.OrganizationId);
-            message.Headers.Add("X-Request-Id", requestId);
+            ConfigureRequestMessage(message, requestId, method, path, queryString, nonce, time, bodyText);
 
-            string auth = CreateAuth(method, path, body, queryString, nonce, time, bodyText);
-
-            message.Headers.Add("X-Auth", auth);
-
-            logger.LogDebug("Initiating HTTP request; " +
+            logger.LogDebug("Initiating HTTP request {RequestId}; " +
                 "HttpMethod: '{HttpMethod}' ::" +
                 "RequestUri: '{RequestUri}' :: " +
-                "X-Time: '{Time}' :: " +
-                "X-Nonce: '{Nonce}' :: " +
-                "X-Organization-Id: '{OrganizationId}' :: " +
-                "X-Request-Id: '{RequestId}' :: " +
-                "X-Auth: '{Auth}' :: " +
                 "Body: '{Body}'",
-                method.ToString(), requestUri, time, nonce, Configuration.OrganizationId, requestId, auth, bodyText);
+                requestId, method.ToString(), requestUri, bodyText);
 
-            var result = await httpClient.SendAsync(message);
+            try
+            {
+                return await httpClient.SendAsync(message);
+            }
+            catch (Exception e)
+            {
+                throw new NiceHashApiSendRequestException(e);
+            }
+        }
 
-            if (result.IsSuccessStatusCode)
+        /// <summary>
+        /// You should take care only of <see cref="NiceHashApiTechnicalIssueException"/> for <see cref="NiceHashApiSendRequestException"/>, 
+        /// <see cref="NiceHashApiReadResponseException"/> and <see cref="NiceHashApiServerException"/>.
+        /// For API client errors (400 &lt;= StatusCode &lt; 500), use <see cref="NiceHashApiClientException" />.
+        /// </summary>
+        /// <exception cref="NiceHashApiSendRequestException"></exception>
+        /// <exception cref="NiceHashApiReadResponseException"></exception>
+        /// <exception cref="NiceHashApiClientException"></exception>
+        /// <exception cref="NiceHashApiServerException"></exception>
+        public async Task<T> SendAsync<T>(HttpMethod method, string path, Dictionary<string, object> query, object body)
+        {
+            string requestId = Guid.NewGuid().ToString();
+            string responseText;
+            var httpResponse = await SendAsync(requestId, method, path, query, body);
+
+            try
+            {
+                responseText = await httpResponse.Content.ReadAsStringAsync();
+            }
+            catch(Exception e)
+            {
+                throw new NiceHashApiReadResponseException(e);
+            }
+
+            if (httpResponse.IsSuccessStatusCode)
             {
                 logger.LogDebug("HTTP request {RequestId} success. Status: {HttpStatus}",
                     requestId,
-                    (int)result.StatusCode);
+                    (int)httpResponse.StatusCode);
+
+                try
+                {
+                    return JsonSerializer.Deserialize<T>(responseText);
+                }
+                catch(Exception e)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not deserialize NiceHash API response (Status {httpResponse.StatusCode}). " +
+                        $"Response text: '{responseText}'.", e);
+                }
             }
-            else
+
+            NiceHashApiErrorDto errorDto = null;
+
+            if (httpResponse.StatusCode >= HttpStatusCode.BadRequest && 
+                httpResponse.StatusCode < HttpStatusCode.InternalServerError)
             {
-                logger.LogWarning("HTTP request {RequestId} error. Status: {HttpStatus}",
+                logger.LogInformation("HTTP request {RequestId} client error. Status: {HttpStatus}",
                     requestId,
-                    (int)result.StatusCode);
+                    (int)httpResponse.StatusCode);
+
+                try
+                {
+                    errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText);
+
+                    logger.LogInformation("ErrorId: {ErrorId}. ResponseText: '{ResponseText}'.", 
+                        errorDto.error_id,
+                        responseText);
+                }
+                catch(Exception e)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not deserialize NiceHash API response (Status {httpResponse.StatusCode}). " +
+                        $"Response text: '{responseText}'.", e);
+                }
+
+                throw new NiceHashApiClientException(httpResponse.StatusCode, errorDto, responseText);
             }
 
-            return result;
-        }
+            logger.LogWarning("HTTP request {RequestId} server error. Status: {HttpStatus}",
+                requestId,
+                (int)httpResponse.StatusCode);
 
-        private string CreateAuth(HttpMethod method, string path, object body, string queryString, string nonce, string time, string bodyText)
-        {
-            Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-
-            var authInput = ImmutableList.Create<byte>()
-                .AddRange(iso.GetBytes(Configuration.ApiKey))
-                .Add(0)
-                .AddRange(iso.GetBytes(time))
-                .Add(0)
-                .AddRange(iso.GetBytes(nonce))
-                .Add(0)
-                // empty field
-                .Add(0)
-                .AddRange(iso.GetBytes(Configuration.OrganizationId))
-                .Add(0)
-                // empty field
-                .Add(0)
-                .AddRange(iso.GetBytes(method.ToString()))
-                .Add(0)
-                .AddRange(iso.GetBytes(path))
-                .Add(0)
-                .AddRange(iso.GetBytes(queryString))
-                ;
-
-            if (body != null)
+            try
             {
-                authInput = authInput
-                    .Add(0)
-                    .AddRange(Encoding.UTF8.GetBytes(bodyText));
+                errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText);
+
+                logger.LogInformation("ErrorId: {ErrorId}. ResponseText: '{ResponseText}'.",
+                    errorDto.error_id,
+                    responseText);
+            }
+            catch
+            {
+                // Despite catch all, the raw responseText is being included in
+                // NiceHashApiServerException for further analysis.
+                errorDto = null;
+
+                logger.LogInformation("ErrorId: #NA. ResponseText: '{ResponseText}'.",
+                    responseText);
             }
 
-            var authKey = Encoding.UTF8.GetBytes(Configuration.ApiSecret);
-
-            string auth = Configuration.ApiKey + ":" +
-                BitConverter.ToString(
-                    new HMACSHA256(authKey)
-                        .ComputeHash(authInput.ToArray()))
-                        .Replace("-", string.Empty)
-                        .ToLower();
-            return auth;
+            // assume status code >= 500 (in fact, if status range 300-399 occur 
+            // will also throw this exception, but it's an unexpected kind of status for this scenario)
+            throw new NiceHashApiServerException(httpResponse.StatusCode,
+                errorDto, responseText);
         }
 
-        public Task<HttpResponseMessage> PostAsync(string path, Dictionary<string, object> query, object body)
+        /// <inheritdoc cref="SendAsync{T}(HttpMethod, string, Dictionary{string, object}, object)"/>
+        public Task<T> PostAsync<T>(string path, Dictionary<string, object> query, object body)
         {
-            return SendAsync(HttpMethod.Post, path, query, body);
+            return SendAsync<T>(HttpMethod.Post, path, query, body);
         }
 
-        public Task<HttpResponseMessage> GetAsync(string path, Dictionary<string, object> query)
+        /// <inheritdoc cref="SendAsync{T}(HttpMethod, string, Dictionary{string, object}, object)"/>
+        public Task<T> PostAsync<T>(string path, object body)
         {
-            return SendAsync(HttpMethod.Get, path, query, null);
+            return PostAsync<T>(path, new Dictionary<string, object>() { }, body);
         }
 
-        public Task<HttpResponseMessage> GetAsync(string path)
+        /// <inheritdoc cref="SendAsync{T}(HttpMethod, string, Dictionary{string, object}, object)"/>
+        public Task PostAsync(string path, object body)
         {
-            return GetAsync(path, new Dictionary<string, object>() { });
+            return PostAsync<object>(path, body);
         }
 
-        public Task<HttpResponseMessage> PostAsync(string path, object body)
+        /// <inheritdoc cref="SendAsync{T}(HttpMethod, string, Dictionary{string, object}, object)"/>
+        public Task<T> GetAsync<T>(string path, Dictionary<string, object> query)
         {
-            return PostAsync(path, new Dictionary<string, object>() { }, body);
+            return SendAsync<T>(HttpMethod.Get, path, query, null);
         }
 
-        public Task<HttpResponseMessage> DeleteAsync(string path)
+        /// <inheritdoc cref="SendAsync{T}(HttpMethod, string, Dictionary{string, object}, object)"/>
+        public Task<T> GetAsync<T>(string path)
         {
-            return SendAsync(HttpMethod.Delete, path, new Dictionary<string, object>() { }, null);
+            return GetAsync<T>(path, new Dictionary<string, object>() { });
+        }
+
+        /// <inheritdoc cref="SendAsync{T}(HttpMethod, string, Dictionary{string, object}, object)"/>
+        public Task DeleteAsync(string path)
+        {
+            return SendAsync<object>(HttpMethod.Delete, path, new Dictionary<string, object>() { }, null);
         }
     }
 }

@@ -27,5 +27,6 @@ namespace HPBot.Application.Dtos
         public float executedQty { get; set; } // ETH amount sold
         public float executedSndQty { get; set; } // BTC amount received
         public string state { get; set; }
+        public long lastResponseTime { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using HPBot.Application.Exceptions;
+﻿using HPBot.Application.Adapters;
+using HPBot.Application.Exceptions;
 using HPBot.Application.Models;
 using Microsoft.Extensions.Logging;
 using System;
@@ -14,14 +15,27 @@ namespace HPBot.Application
 {
     public class OrderCreationService
     {
-        private readonly NiceHashApiAdapter niceHash;
+        private readonly HashpowerMarketPublicAdapter hashpowerMarketPublicAdapter;
+        private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly ILogger logger;
+        private readonly ILogger notifier;
 
-        public OrderCreationService(NiceHashApiAdapter niceHash, ILoggerFactory loggerFactory)
+        public OrderCreationService(HashpowerMarketPublicAdapter hashpowerMarketPublicAdapter, 
+            HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter, ILoggerFactory loggerFactory)
         {
-            this.niceHash = niceHash ?? throw new ArgumentNullException(nameof(niceHash));
-            logger = loggerFactory?.CreateLogger<OrderCreationService>() ??
+            this.hashpowerMarketPublicAdapter = hashpowerMarketPublicAdapter ?? 
+                throw new ArgumentNullException(nameof(hashpowerMarketPublicAdapter));
+
+            this.hashpowerMarketPrivateAdapter = hashpowerMarketPrivateAdapter ?? 
+                throw new ArgumentNullException(nameof(hashpowerMarketPrivateAdapter));
+
+            if (loggerFactory == null)
+            {
                 throw new ArgumentNullException(nameof(loggerFactory));
+            }
+
+            logger = loggerFactory.CreateLogger<OrderCreationService>();
+            notifier = loggerFactory.CreateNotifier<OrderCreationService>();
         }
 
         public async Task<CreateOrderResult> TryBestOrderAsync(
@@ -32,8 +46,8 @@ namespace HPBot.Application
         {
             Dictionary<string, string> markets = new Dictionary<string, string>()
             {
-                { "USA",  niceHash.Client.Configuration.UsaPoolId },
-                { "EU", niceHash.Client.Configuration.EUPoolId }
+                { "USA",  hashpowerMarketPublicAdapter.Client.Configuration.UsaPoolId },
+                { "EU", hashpowerMarketPublicAdapter.Client.Configuration.EUPoolId }
             };
 
             // TODO: prevent risk of never create an order by keep minPriceBtc assignment as is
@@ -43,11 +57,12 @@ namespace HPBot.Application
 
                 foreach (var market in markets)
                 {
-                    taskMap.Add(market.Key, niceHash.GetCurrentFixedPriceAsync(market.Key, speedLimitThs));
+                    taskMap.Add(market.Key, hashpowerMarketPublicAdapter.GetCurrentFixedPriceAsync(market.Key, speedLimitThs));
                 }
 
                 foreach(var marketTaskPair in taskMap)
                 {
+                    // TODO: handle errors
                     var fixedPriceBtc = (await marketTaskPair.Value).FixedPriceBtc;
 
                     logger.LogInformation("Price for {Market} market: {MaketPriceBtc}", marketTaskPair.Key, fixedPriceBtc);
@@ -74,7 +89,7 @@ namespace HPBot.Application
 
                         if (order != null)
                         {
-                            logger.LogError("Created order on {Market} market!", market.Key); // TODO: fix log level
+                            notifier.LogInformation("Created order on {Market} market!", market.Key);
 
                             return order;
                         }
@@ -103,17 +118,16 @@ namespace HPBot.Application
 
             try
             {
-                currentPrice = await niceHash.GetCurrentFixedPriceAsync(market, speedLimitThs);
+                currentPrice = await hashpowerMarketPublicAdapter.GetCurrentFixedPriceAsync(market, speedLimitThs);
             }
-            catch(DataQueryException e) when (e.Cause == DataQueryException.DataQueryExceptionCause.FixedOrderPriceQuerySpeedLimitTooBig)
+            catch(GetCurrentFixedPriceException e) when (e.Reason == GetCurrentFixedPriceException.GetCurrentFixedPriceErrorReason.FixedOrderPriceQuerySpeedLimitTooBig)
             {
                 logger.LogWarning(e, $"Could not get current fixed price on {market} market. " +
                     $"There are no more hashpower available for speed limit of {speedLimitThs} TH/s at this moment.");
 
                 return null;
             }
-            // TODO: aqui estava tratando InvalidOperationExcetion que nao sera mais lancada
-            catch (Exception e) when (e is TaskCanceledException || e is HttpRequestException) 
+            catch (NiceHashApiTechnicalIssueException e)
             {
                 logger.LogWarning(e, $"Could not get current fixed price on {market} market. " +
                     $"Request failed, wating for 5 seconds to resume...");
@@ -146,7 +160,7 @@ namespace HPBot.Application
                     market,
                     currentPrice.FixedPriceBtc);
 
-                return await niceHash.CreateOrderAsync(market, amountBtc,
+                return await hashpowerMarketPrivateAdapter.CreateOrderAsync(market, amountBtc,
                     currentPrice.FixedPriceBtc, speedLimitThs, poolId, "FIXED");
             }
 

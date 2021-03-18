@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using HPBot.Application.Adapters;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,23 +12,30 @@ namespace HPBot.Application
     public class OrderProfitabilityGuardService
     {
         private readonly OrderCancellationService orderCancellationService;
-        private readonly NiceHashApiAdapter niceHashApi;
+        private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly TwoCryptoCalcAdapter twoCryptoCalc;
         private readonly ILogger logger;
+        private readonly ILogger notifier;
 
         public OrderProfitabilityGuardService(
             OrderCancellationService orderCancellationService,
-            NiceHashApiAdapter niceHashApi,
+            HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter,
             TwoCryptoCalcAdapter twoCryptoCalc, ILoggerFactory loggerFactory)
         {
             this.orderCancellationService = orderCancellationService ?? 
                 throw new ArgumentNullException(nameof(orderCancellationService));
-            this.niceHashApi = niceHashApi ?? 
-                throw new ArgumentNullException(nameof(niceHashApi));
+            this.hashpowerMarketPrivateAdapter = hashpowerMarketPrivateAdapter ?? 
+                throw new ArgumentNullException(nameof(hashpowerMarketPrivateAdapter));
             this.twoCryptoCalc = twoCryptoCalc ?? 
                 throw new ArgumentNullException(nameof(twoCryptoCalc));
-            logger = loggerFactory?.CreateLogger<OrderProfitabilityGuardService>() ?? 
+
+            if(loggerFactory == null)
+            {
                 throw new ArgumentNullException(nameof(loggerFactory));
+            }
+
+            logger = loggerFactory.CreateLogger<OrderProfitabilityGuardService>();
+            notifier = loggerFactory.CreateNotifier<OrderProfitabilityGuardService>();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -51,7 +59,7 @@ namespace HPBot.Application
 
         private async Task CancelRunningOrderIfPriceGtRewardAsync()
         {
-            var runningOrder = (await niceHashApi.GetActiveOrdersAsync())
+            var runningOrder = (await hashpowerMarketPrivateAdapter.GetActiveOrdersAsync())
                 .SingleOrDefault(o => o.IsRunning);
 
             if (runningOrder != null)
@@ -64,7 +72,7 @@ namespace HPBot.Application
 
                 if (runningOrder.PriceBtc > miningAverageRewardBtc * 0.99)
                 {
-                    logger.LogError("Cancelling order {OrderId} due the price ({PriceBtc}) " + // TODO: fix log level
+                    notifier.LogInformation("Cancelling order {OrderId} due the price ({PriceBtc}) " +
                         "greater than reward ({MiningAverageRewardBtc})",
                         runningOrder.Id,
                         runningOrder.PriceBtc,

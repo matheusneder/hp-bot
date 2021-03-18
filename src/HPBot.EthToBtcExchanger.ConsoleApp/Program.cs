@@ -1,7 +1,10 @@
 ﻿using HPBot.Application;
+using HPBot.Application.Adapters;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace HPBot.EthToBtcExchanger.ConsoleApp
@@ -21,9 +24,21 @@ namespace HPBot.EthToBtcExchanger.ConsoleApp
 
             var logger = loggerFactory.CreateLogger<Program>();
 
-            var nhClient = new NiceHashApiClient(configuration, loggerFactory);
-            var nhAdapter = new NiceHashApiAdapter(nhClient);
-            var ethToBtcEchangeService = new EthToBtcExchangeService(nhAdapter, loggerFactory);
+            HttpClient httpClient = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = new WebProxy()
+                {
+                    Address = new Uri("http://localhost:8888")
+                }
+            })
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+
+            var nhClient = new NiceHashApiPersonedClient(httpClient, configuration, loggerFactory);
+            ExchangePrivateAdapter exchangePrivateAdapter = new ExchangePrivateAdapter(nhClient);
+            WalletPrivateAdapter walletPrivateAdapter = new WalletPrivateAdapter(nhClient);
+            var ethToBtcEchangeService = new EthToBtcExchangeService(exchangePrivateAdapter, walletPrivateAdapter, loggerFactory);
 
             string lastDepositDataFile = "c:\\hp-data\\last-eth-deposit.dat";
 
@@ -40,7 +55,7 @@ namespace HPBot.EthToBtcExchanger.ConsoleApp
                     if(exchangeResult != null)
                     {
                         File.WriteAllText(lastDepositDataFile, exchangeResult
-                            .LastDepositCreatedAt.ToUnixTimeMilliseconds().ToString());
+                            .LastOrderResponseTime.ToUnixTimeMilliseconds().ToString());
                     }
                 }
                 catch(Exception e)

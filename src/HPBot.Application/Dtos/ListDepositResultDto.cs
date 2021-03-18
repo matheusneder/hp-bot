@@ -51,8 +51,17 @@ namespace HPBot.Application.Dtos
             public string id { get; set; }
             public long created { get; set; }
             public string amount { get; set; }
+            public CurrencyDto currency { get; set; }
+
+            public class CurrencyDto 
+            { 
+                public string description { get; set; }
+                public string enumName { get; set; }
+            }
+
         }
 
         public IEnumerable<ItemDto> list { get; set; }
+        
     }
 }

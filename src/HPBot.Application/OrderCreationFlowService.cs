@@ -1,4 +1,5 @@
-﻿using HPBot.Application.Models;
+﻿using HPBot.Application.Adapters;
+using HPBot.Application.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace HPBot.Application
     {
         private readonly OrderCreationService orderCreationService;
         private readonly OrderCancellationService orderCancellationService;
-        private readonly NiceHashApiAdapter niceHashApi;
+        private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly TwoCryptoCalcAdapter twoCryptoCalc;
         private readonly ILoggerFactory loggerFactory;
         private readonly ILogger logger;
@@ -20,15 +21,15 @@ namespace HPBot.Application
         public OrderCreationFlowService(
             OrderCreationService orderCreationService, 
             OrderCancellationService orderCancellationService,
-            NiceHashApiAdapter niceHashApi, 
+            HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter, 
             TwoCryptoCalcAdapter twoCryptoCalc, 
             ILoggerFactory loggerFactory)
         {
             this.orderCreationService = orderCreationService ?? 
                 throw new ArgumentNullException(nameof(orderCreationService));
             this.orderCancellationService = orderCancellationService ?? throw new ArgumentNullException(nameof(orderCancellationService));
-            this.niceHashApi = niceHashApi ?? 
-                throw new ArgumentNullException(nameof(niceHashApi));
+            this.hashpowerMarketPrivateAdapter = hashpowerMarketPrivateAdapter ?? 
+                throw new ArgumentNullException(nameof(hashpowerMarketPrivateAdapter));
             this.twoCryptoCalc = twoCryptoCalc ?? throw new ArgumentNullException(nameof(twoCryptoCalc));
             this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             logger = loggerFactory.CreateLogger<OrderCreationFlowService>();
@@ -38,7 +39,7 @@ namespace HPBot.Application
         {
             PriceProvider priceProvider = new PriceProvider(twoCryptoCalc, loggerFactory);
 
-            priceProvider.RunningOrder = (await niceHashApi.GetActiveOrdersAsync())
+            priceProvider.RunningOrder = (await hashpowerMarketPrivateAdapter.GetActiveOrdersAsync())
                 .SingleOrDefault(o => o.IsRunning);
 
             if (priceProvider.RunningOrder == null)

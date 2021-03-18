@@ -7,6 +7,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
+using System.Net.Http;
 
 namespace HPBot.Tests
 {
@@ -15,13 +16,25 @@ namespace HPBot.Tests
         [Fact]
         public async Task CreateHashPowerOrder_Success()
         {
-            NiceHashConfiguration nhConfiguration = NiceHashConfiguration
+            NiceHashConfiguration configuration = NiceHashConfiguration
                 .ReadFromNiceHashConfigJsonFile("test");
 
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var nhClient = new NiceHashApiClient(nhConfiguration, loggerFactory);
 
-            var response = await nhClient.PostAsync("/main/api/v2/hashpower/order",
+            HttpClient httpClient = new HttpClient(new HttpClientHandler()
+            {
+                Proxy = new WebProxy()
+                {
+                    Address = new Uri("http://localhost:8888")
+                }
+            })
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+
+            var nhClient = new NiceHashApiPersonedClient(httpClient, configuration, loggerFactory);
+
+            await nhClient.PostAsync("/main/api/v2/hashpower/order",
                 new
                 {
                     market = "USA",
@@ -34,8 +47,6 @@ namespace HPBot.Tests
                     limit = 0.01,
                     type = "STANDARD"
                 });
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
 }

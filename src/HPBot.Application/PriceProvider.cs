@@ -70,7 +70,7 @@ namespace HPBot.Application
                 return float.MaxValue;
             }
 
-            var timeTillExpire = RunningOrder.CanLiveTill - DateTimeOffset.Now;
+            var timeTillExpire = RunningOrder.Expires - DateTimeOffset.Now;
 
             if (timeTillExpire < TimeSpan.FromHours(2))
             {

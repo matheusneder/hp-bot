@@ -7,6 +7,8 @@ namespace HPBot.Application
 {
     public class TelegramLogProvider : ILoggerProvider
     {
+        public const string NotifierLogCategoryName = "Notifier";
+
         public class TelegramLogger : ILogger
         {
             private readonly HttpClient httpClient = new HttpClient();
@@ -38,11 +40,11 @@ namespace HPBot.Application
                 throw new NotImplementedException();
             }
 
-            public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Error;
+            public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
             {
-                if (IsEnabled(logLevel))
+                if (categoryName.StartsWith($"{NotifierLogCategoryName}."))
                 {
                     string text = $"{categoryName}: {state}";
 
