@@ -41,8 +41,9 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.Equal(sendAmound, exchangeResult.AmountEthToSell);
             Assert.Equal(expectedReceiveAmount, exchangeResult.AmountBtcReceived);
             Assert.Equal(EthToBtcExchangeResult.ExchangeState.Full, exchangeResult.State);
-            Assert.True(exchangeResult.LastOrderResponseTime > DateTimeOffset.Now.AddMinutes(-5));
-            Assert.True(exchangeResult.LastOrderResponseTime < DateTimeOffset.Now.AddMinutes(5));
+            Assert.InRange(exchangeResult.LastOrderResponseTime,
+                DateTimeOffset.Now.AddMinutes(-5),
+                DateTimeOffset.Now.AddMinutes(5));
             Assert.Matches(Helpers.NiceHashIdPattern, exchangeResult.OrderId);
         }
     }

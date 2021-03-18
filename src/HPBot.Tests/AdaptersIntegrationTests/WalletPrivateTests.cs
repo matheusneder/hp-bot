@@ -29,8 +29,9 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.Collection(deposits, 
                 d => 
                 {
-                    Assert.True(d.Amount > 0.0F);
-                    Assert.True(d.CreatedAt > DateTimeOffset.Parse("2020-01-01T00:00:00Z"));
+                    Assert.InRange(d.Amount, 0.0F, float.MaxValue);
+                    Assert.InRange(d.CreatedAt, DateTimeOffset.Parse("2020-01-01T00:00:00Z"), 
+                        DateTimeOffset.Now.AddSeconds(5));
                     Assert.Matches(Helpers.NiceHashIdPattern, d.Id);
                     Assert.Equal(currency, d.Currency);
                 });

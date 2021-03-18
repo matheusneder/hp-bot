@@ -69,7 +69,11 @@ namespace HPBot.Tests.AdaptersIntegrationTests
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD");
 
             Assert.Equal(priceBtc, createdOrder.PriceBtc);
-            Assert.True(createdOrder.Expires > DateTimeOffset.Now.AddHours(23));
+            Assert.InRange(createdOrder.Expires,
+                // Fixed order duration
+                DateTimeOffset.Now.AddHours(23),
+                // Standard order duration
+                DateTimeOffset.Now.AddDays(10));
             Assert.Equal(expectedMarketFactor, createdOrder.MarketFactor);
 
             // Retriving
@@ -78,7 +82,11 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.Equal(createdOrder.Id, retrivedOrder.Id);
             Assert.Equal(priceBtc, retrivedOrder.PriceBtc);
             Assert.Equal("ACTIVE", retrivedOrder.Status);
-            Assert.True(retrivedOrder.Expires > DateTimeOffset.Now.AddHours(23));
+            Assert.InRange(retrivedOrder.Expires, 
+                // Fixed order duration
+                DateTimeOffset.Now.AddHours(23),
+                // Standard order duration
+                DateTimeOffset.Now.AddDays(10));
             Assert.Equal(expectedMarketFactor, retrivedOrder.MarketFactor);
 
             // Refilling!
@@ -91,9 +99,10 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             Assert.Equal(createdOrder.Id, retrivedOrderFromActiveOrderList.Id);
             Assert.Equal(priceBtc, retrivedOrderFromActiveOrderList.PriceBtc);
             Assert.False(retrivedOrderFromActiveOrderList.IsRunning);
-            Assert.True(retrivedOrderFromActiveOrderList.CreatedAt > DateTimeOffset.Now.AddSeconds(-10));
-            Assert.True(retrivedOrderFromActiveOrderList.CreatedAt < DateTimeOffset.Now.AddSeconds(10));
-            Assert.True(retrivedOrderFromActiveOrderList.EstimateDurationInSeconds >= 0);
+            Assert.InRange(retrivedOrderFromActiveOrderList.CreatedAt, 
+                DateTimeOffset.Now.AddSeconds(-10), 
+                DateTimeOffset.Now.AddSeconds(10));
+            Assert.InRange(retrivedOrderFromActiveOrderList.EstimateDurationInSeconds, 0, int.MaxValue);
             Assert.Equal(expectedMarketFactor, retrivedOrderFromActiveOrderList.MarketFactor);
 
             // Check if refill worked
