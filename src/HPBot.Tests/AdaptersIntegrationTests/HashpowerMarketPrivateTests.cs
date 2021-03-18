@@ -40,7 +40,7 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             float amountBtc = 0.005F;
             float priceBtc = 1.0F;
             float speedLimitThs = 0.01F;
-            float refillAmount = 0.001F;
+            float refillAmount = 0.0001F;
 
             var createdOrder = await HPPrivateAdapter
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD");
