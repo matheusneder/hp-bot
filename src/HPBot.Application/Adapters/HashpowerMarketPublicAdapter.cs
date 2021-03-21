@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace HPBot.Application.Adapters
 {
-    public class HashpowerMarketPublicAdapter
+    public class HashpowerMarketPublicAdapter : IHashpowerMarketPublicAdapter
     {
-        public NiceHashApiClient Client { get; set; }
+        public INiceHashApiClient Client { get; set; }
 
         public HashpowerMarketPublicAdapter(NiceHashApiClient client)
         {

@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace HPBot.Application.Adapters
 {
-    public class ExchangePrivateAdapter
+    public class ExchangePrivateAdapter : IExchangePrivateAdapter
     {
-        public NiceHashApiClient Client { get; set; }
+        public INiceHashApiClient Client { get; set; }
 
         public ExchangePrivateAdapter(NiceHashApiPersonedClient client)
         {
@@ -70,7 +70,7 @@ namespace HPBot.Application.Adapters
 
                         if (errorDto?.error?.status == 1219)
                             throw new ExchangeException(ExchangeException.ExchangeErrorReason.QuantityTooSmall, market, amount);
-                        
+
                         break;
                 }
 

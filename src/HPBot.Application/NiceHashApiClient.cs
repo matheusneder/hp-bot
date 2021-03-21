@@ -16,7 +16,7 @@ using System.Web;
 
 namespace HPBot.Application
 {
-    public class NiceHashApiClient
+    public class NiceHashApiClient : INiceHashApiClient
     {
         public NiceHashConfiguration Configuration { get; set; }
         private readonly HttpClient httpClient;
@@ -26,11 +26,11 @@ namespace HPBot.Application
         {
             this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            logger = loggerFactory?.CreateLogger<NiceHashApiClient>() ?? 
+            logger = loggerFactory?.CreateLogger<NiceHashApiClient>() ??
                 throw new ArgumentNullException(nameof(loggerFactory));
         }
 
-        public virtual void ConfigureRequestMessage(HttpRequestMessage message, string requestId, HttpMethod method, 
+        public virtual void ConfigureRequestMessage(HttpRequestMessage message, string requestId, HttpMethod method,
             string path, string queryString, string nonce, string time, string bodyText)
         {
         }
@@ -97,7 +97,7 @@ namespace HPBot.Application
             {
                 responseText = await httpResponse.Content.ReadAsStringAsync();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new NiceHashApiReadResponseException(e);
             }
@@ -112,7 +112,7 @@ namespace HPBot.Application
                 {
                     return JsonSerializer.Deserialize<T>(responseText);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new InvalidOperationException(
                         $"Could not deserialize NiceHash API response (Status {httpResponse.StatusCode}). " +
@@ -122,7 +122,7 @@ namespace HPBot.Application
 
             NiceHashApiErrorDto errorDto = null;
 
-            if (httpResponse.StatusCode >= HttpStatusCode.BadRequest && 
+            if (httpResponse.StatusCode >= HttpStatusCode.BadRequest &&
                 httpResponse.StatusCode < HttpStatusCode.InternalServerError)
             {
                 logger.LogInformation("HTTP request {RequestId} client error. Status: {HttpStatus}",
@@ -133,11 +133,11 @@ namespace HPBot.Application
                 {
                     errorDto = JsonSerializer.Deserialize<NiceHashApiErrorDto>(responseText);
 
-                    logger.LogInformation("ErrorId: {ErrorId}. ResponseText: '{ResponseText}'.", 
+                    logger.LogInformation("ErrorId: {ErrorId}. ResponseText: '{ResponseText}'.",
                         errorDto.error_id,
                         responseText);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new InvalidOperationException(
                         $"Could not deserialize NiceHash API response (Status {httpResponse.StatusCode}). " +

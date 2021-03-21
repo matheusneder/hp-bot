@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace HPBot.Application.Adapters
 {
-    public class WalletPrivateAdapter
+    public class WalletPrivateAdapter : IWalletPrivateAdapter
     {
-        public NiceHashApiClient Client { get; set; }
+        public INiceHashApiClient Client { get; set; }
 
         public WalletPrivateAdapter(NiceHashApiPersonedClient client)
         {
