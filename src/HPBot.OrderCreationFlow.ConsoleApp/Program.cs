@@ -37,7 +37,7 @@ namespace HPBot.OrderCreationFlow.ConsoleApp
             var nhClient = new NiceHashApiPersonedClient(httpClient, configuration, loggerFactory);
             HashpowerMarketPublicAdapter hashpowerMarketPublicAdapter = new HashpowerMarketPublicAdapter(nhClient);
             HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter = new HashpowerMarketPrivateAdapter(nhClient);
-            var orderCreationService = new OrderCreationService(hashpowerMarketPublicAdapter, hashpowerMarketPrivateAdapter, loggerFactory);
+            var orderCreationService = new DeprecatedOrderCreationService(hashpowerMarketPublicAdapter, hashpowerMarketPrivateAdapter, loggerFactory);
             var orderCancellationService = new OrderCancellationService(hashpowerMarketPrivateAdapter, loggerFactory);
 
             var orderLifecycleService = new OrderCreationFlowService(

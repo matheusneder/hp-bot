@@ -11,7 +11,7 @@ namespace HPBot.Application
 {
     public class OrderCreationFlowService
     {
-        private readonly OrderCreationService orderCreationService;
+        private readonly DeprecatedOrderCreationService orderCreationService;
         private readonly OrderCancellationService orderCancellationService;
         private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly TwoCryptoCalcAdapter twoCryptoCalc;
@@ -19,7 +19,7 @@ namespace HPBot.Application
         private readonly ILogger logger;
 
         public OrderCreationFlowService(
-            OrderCreationService orderCreationService, 
+            DeprecatedOrderCreationService orderCreationService, 
             OrderCancellationService orderCancellationService,
             HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter, 
             TwoCryptoCalcAdapter twoCryptoCalc, 

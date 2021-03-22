@@ -13,14 +13,14 @@ using System.Threading.Tasks;
 
 namespace HPBot.Application
 {
-    public class OrderCreationService
+    public class DeprecatedOrderCreationService
     {
         private readonly HashpowerMarketPublicAdapter hashpowerMarketPublicAdapter;
         private readonly HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly ILogger logger;
         private readonly ILogger notifier;
 
-        public OrderCreationService(HashpowerMarketPublicAdapter hashpowerMarketPublicAdapter, 
+        public DeprecatedOrderCreationService(HashpowerMarketPublicAdapter hashpowerMarketPublicAdapter, 
             HashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter, ILoggerFactory loggerFactory)
         {
             this.hashpowerMarketPublicAdapter = hashpowerMarketPublicAdapter ?? 
@@ -34,8 +34,8 @@ namespace HPBot.Application
                 throw new ArgumentNullException(nameof(loggerFactory));
             }
 
-            logger = loggerFactory.CreateLogger<OrderCreationService>();
-            notifier = loggerFactory.CreateNotifier<OrderCreationService>();
+            logger = loggerFactory.CreateLogger<DeprecatedOrderCreationService>();
+            notifier = loggerFactory.CreateNotifier<DeprecatedOrderCreationService>();
         }
 
         public async Task<CreateOrderResult> TryBestOrderAsync(

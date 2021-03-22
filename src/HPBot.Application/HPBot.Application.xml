@@ -21,6 +21,9 @@
         <member name="M:HPBot.Application.Adapters.HashpowerMarketPublicAdapter.GetCurrentFixedPriceAsync(System.String,System.Single)">
             <exception cref="T:HPBot.Application.Exceptions.GetCurrentFixedPriceException"></exception>
         </member>
+        <member name="M:HPBot.Application.DeprecatedOrderCreationService.TryOrderAsync(System.String,System.String,System.Single,System.Single,System.Single)">
+            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
+        </member>
         <member name="T:HPBot.Application.Exceptions.ErrorMappingException">
             <summary>
             Exception to be thrown when there are no mappings for a specific error response messsage.
@@ -88,7 +91,7 @@
         <member name="M:HPBot.Application.NiceHashApiClient.DeleteAsync(System.String)">
             <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
         </member>
-        <member name="M:HPBot.Application.OrderCreationService.TryOrderAsync(System.String,System.String,System.Single,System.Single,System.Single)">
+        <member name="M:HPBot.Application.Services.OrderCreationService.TryOrderAsync(System.String,System.String,System.Single,System.Single,System.Single)">
             <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
         </member>
     </members>
