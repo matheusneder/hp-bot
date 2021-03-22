@@ -64,7 +64,7 @@ namespace HPBot.Tests.ServicesUnitTests
         }
 
         [Fact]
-        public async Task TryOrder_MaxPriceGtCurrentPrice_Error()
+        public async Task TryOrder_CurrentPriceGtMaxPrice_Error()
         {
             string market = "USA";
             string poolId = "xpto";
@@ -114,8 +114,10 @@ namespace HPBot.Tests.ServicesUnitTests
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
+
             var createOrderResult = await OrderCreationService
                 .TryOrderAsync(market, poolId, maxPriceBtc, amountBtc, speedLimitThs);
+
             stopwatch.Stop();
             Assert.InRange(stopwatch.ElapsedMilliseconds, 5000, long.MaxValue);
             Assert.Null(createOrderResult);
@@ -137,6 +139,7 @@ namespace HPBot.Tests.ServicesUnitTests
 
             var createOrderResult = await OrderCreationService
                 .TryOrderAsync(market, poolId, maxPriceBtc, amountBtc, speedLimitThs);
+
             Assert.Null(createOrderResult);
         }
     }
