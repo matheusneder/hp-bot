@@ -28,10 +28,10 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             float priceBtc = 1.0F;
             float speedLimitThs = 0.05F;
 
-            var ex = await Assert.ThrowsAsync<CreateOrderException>(async () => await HPPrivateAdapter
+            var ex = await Assert.ThrowsAsync<OrderCreationException>(async () => await HPPrivateAdapter
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD"));
 
-            Assert.Equal(CreateOrderException.CreateOrderErrorReason.OrderAmountTooSmall, ex.Reason);
+            Assert.Equal(OrderCreationException.CreateOrderErrorReason.OrderAmountTooSmall, ex.Reason);
         }
 
         [Fact]
@@ -45,10 +45,10 @@ namespace HPBot.Tests.AdaptersIntegrationTests
             var createdOrder = await HPPrivateAdapter
                 .CreateOrderAsync("USA", amountBtc, priceBtc, speedLimitThs, Helpers.Configuration.UsaPoolId, "STANDARD");
 
-            var ex = await Assert.ThrowsAsync<RefillOrderException>(async () =>
+            var ex = await Assert.ThrowsAsync<OrderRefillException>(async () =>
                 await HPPrivateAdapter.RefillOrder(createdOrder.Id, refillAmount));
 
-            Assert.Equal(RefillOrderException.RefillOrderErrorReason.RefillOrderAmountBelowMinimalOrderAmount, 
+            Assert.Equal(OrderRefillException.RefillOrderErrorReason.RefillOrderAmountBelowMinimalOrderAmount, 
                 ex.Reason);
             Assert.Matches(Helpers.NiceHashIdPattern, ex.OrderId);
             Assert.Equal(refillAmount, ex.AmountBtc);

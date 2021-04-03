@@ -6,16 +6,16 @@ using System.Text;
 namespace HPBot.Application.Exceptions
 {
     [Serializable]
-    public class RefillOrderException : AppException
+    public class OrderRefillException : AppException
     {
-        public RefillOrderException(string orderId, float amountBtc, RefillOrderErrorReason reason)
+        public OrderRefillException(string orderId, float amountBtc, RefillOrderErrorReason reason)
         {
             OrderId = orderId;
             AmountBtc = amountBtc;
             Reason = reason;
         }
 
-        protected RefillOrderException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected OrderRefillException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 

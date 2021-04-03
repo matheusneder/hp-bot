@@ -6,14 +6,14 @@ using System.Text;
 namespace HPBot.Application.Exceptions
 {
     [Serializable]
-    public class CreateOrderException : AppException
+    public class OrderCreationException : AppException
     {
-        public CreateOrderException(CreateOrderErrorReason reason)
+        public OrderCreationException(CreateOrderErrorReason reason)
         {
             Reason = reason;
         }
 
-        protected CreateOrderException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected OrderCreationException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 

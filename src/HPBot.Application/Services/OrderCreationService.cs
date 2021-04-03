@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HPBot.Application.Services
 {
-    public class OrderCreationService
+    public class OrderCreationService : IOrderCreationService
     {
         private readonly IHashpowerMarketPublicAdapter hashpowerMarketPublicAdapter;
         private readonly IHashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
@@ -32,7 +32,7 @@ namespace HPBot.Application.Services
             logger = loggerFactory.CreateLogger<OrderCreationService>();
         }
 
-        /// <exception cref="CreateOrderException" />
+        /// <exception cref="OrderCreationException" />
         public async Task<CreateOrderResult> TryOrderAsync(
             string market,
             string poolId,

@@ -95,7 +95,7 @@ namespace HPBot.Application
                         }
                     }
                 }
-                catch(CreateOrderException e)
+                catch(OrderCreationException e)
                 {
                     logger.LogWarning(e, "Error creating order");
                 }
@@ -106,7 +106,7 @@ namespace HPBot.Application
 
         private float minMarketPriceBtc = float.MaxValue;
 
-        /// <exception cref="CreateOrderException" />
+        /// <exception cref="OrderCreationException" />
         private async Task<CreateOrderResult> TryOrderAsync(
             string market, 
             string poolId, 

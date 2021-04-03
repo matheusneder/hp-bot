@@ -20,7 +20,7 @@ namespace HPBot.Application.Adapters
             Client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
-        /// <exception cref="CreateOrderException" />
+        /// <exception cref="OrderCreationException" />
         public async Task<CreateOrderResult> CreateOrderAsync(string market, float ammoutBtc, float priceBtc,
             float speedLimitThs, string poolId, string orderType)
         {
@@ -57,12 +57,12 @@ namespace HPBot.Application.Adapters
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5054)) // Generic Error
                             throw new NiceHashApiServerException(e.HttpStatusCode, e.NiceHashApiErrorDto, null);
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5056))
-                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason.PriceChanged);
+                            throw new OrderCreationException(OrderCreationException.CreateOrderErrorReason.PriceChanged);
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 3001))
-                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason
+                            throw new OrderCreationException(OrderCreationException.CreateOrderErrorReason
                                 .InsufficientBalanceInAccount);
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5067))
-                            throw new CreateOrderException(CreateOrderException.CreateOrderErrorReason
+                            throw new OrderCreationException(OrderCreationException.CreateOrderErrorReason
                                 .OrderAmountTooSmall);
                         break;
                 }
@@ -84,7 +84,7 @@ namespace HPBot.Application.Adapters
             }
         }
 
-        /// <exception cref="RefillOrderException"></exception>
+        /// <exception cref="OrderRefillException"></exception>
         public async Task RefillOrder(string id, float amountBtc)
         {
             try
@@ -102,10 +102,10 @@ namespace HPBot.Application.Adapters
                     case HttpStatusCode.BadRequest:
                     case HttpStatusCode.Conflict:
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 5090))
-                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderErrorReason
+                            throw new OrderRefillException(id, amountBtc, OrderRefillException.RefillOrderErrorReason
                                 .RefillOrderAmountBelowMinimalOrderAmount);
                         if (e.NiceHashApiErrorDto.errors.Any(e => e.code == 3001))
-                            throw new RefillOrderException(id, amountBtc, RefillOrderException.RefillOrderErrorReason
+                            throw new OrderRefillException(id, amountBtc, OrderRefillException.RefillOrderErrorReason
                                 .InsufficientBalanceInAccount);
                         break;
                 }
