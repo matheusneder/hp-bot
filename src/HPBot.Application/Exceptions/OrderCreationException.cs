@@ -23,7 +23,11 @@ namespace HPBot.Application.Exceptions
         {
             InsufficientBalanceInAccount = 3001,
             PriceChanged = 5056,
-            OrderAmountTooSmall = 5067
+            OrderAmountTooSmall = 5067,
+            /// <summary>
+            /// Blocked by business logic
+            /// </summary>
+            OrderCreationBlocked = 10068
         }
 
         public override string Message => $"Reason: {Reason}";

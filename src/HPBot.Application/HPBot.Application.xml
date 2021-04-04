@@ -8,10 +8,10 @@
             <exception cref="T:HPBot.Application.Exceptions.ExchangeException"></exception>
         </member>
         <member name="M:HPBot.Application.Adapters.HashpowerMarketPrivateAdapter.CreateOrderAsync(System.String,System.Single,System.Single,System.Single,System.String,System.String)">
-            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
+            <exception cref="T:HPBot.Application.Exceptions.OrderCreationException" />
         </member>
         <member name="M:HPBot.Application.Adapters.HashpowerMarketPrivateAdapter.RefillOrder(System.String,System.Single)">
-            <exception cref="T:HPBot.Application.Exceptions.RefillOrderException"></exception>
+            <exception cref="T:HPBot.Application.Exceptions.OrderRefillException"></exception>
         </member>
         <member name="M:HPBot.Application.Adapters.HashpowerMarketPrivateAdapter.GetActiveOrdersAsync">
             <summary>
@@ -22,7 +22,7 @@
             <exception cref="T:HPBot.Application.Exceptions.GetCurrentFixedPriceException"></exception>
         </member>
         <member name="M:HPBot.Application.DeprecatedOrderCreationService.TryOrderAsync(System.String,System.String,System.Single,System.Single,System.Single)">
-            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
+            <exception cref="T:HPBot.Application.Exceptions.OrderCreationException" />
         </member>
         <member name="T:HPBot.Application.Exceptions.ErrorMappingException">
             <summary>
@@ -40,6 +40,11 @@
             <summary>
             Exception to be thrown when there are no mappings for a specific property (usually an enum).
             NOTE: This is not an application exception, it's a fatal error (need to fix mappings).
+            </summary>
+        </member>
+        <member name="F:HPBot.Application.Exceptions.OrderCreationException.CreateOrderErrorReason.OrderCreationBlocked">
+            <summary>
+            Blocked by business logic
             </summary>
         </member>
         <member name="P:HPBot.Application.Models.ListOrderResultItem.AmountBtc">
@@ -92,7 +97,7 @@
             <inheritdoc cref="M:HPBot.Application.NiceHashApiClient.SendAsync``1(System.Net.Http.HttpMethod,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object)"/>
         </member>
         <member name="M:HPBot.Application.Services.OrderCreationService.TryOrderAsync(System.String,System.String,System.Single,System.Single,System.Single)">
-            <exception cref="T:HPBot.Application.Exceptions.CreateOrderException" />
+            <exception cref="T:HPBot.Application.Exceptions.OrderCreationException" />
         </member>
     </members>
 </doc>
