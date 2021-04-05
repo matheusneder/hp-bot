@@ -20,6 +20,7 @@ namespace HPBot.Tests.ServicesUnitTests
             new Mock<IOrderCreationBlockerService>();
         private readonly Mock<IOrderCreationService> orderCreationServiceMock =
             new Mock<IOrderCreationService>();
+
         private GuardedOrderCreationService GuardedOrderCreationService =>
             new GuardedOrderCreationService(
                 orderCreationServiceMock.Object,
@@ -145,6 +146,89 @@ namespace HPBot.Tests.ServicesUnitTests
             
             Assert.Null(createOrderResult);
             Assert.Empty(activeOrders);
+        }
+
+        [Fact]
+        public async Task TryOrder_NiceHashApiTechnicalIssueException_UnknowOrders_Error()
+        {
+            string market = "USA";
+            string poolId = "xpto";
+            float maxPriceBtc = 3F;
+            float amountBtc = 0.001F;
+            float speedLimitThs = 0.01F;
+            string zumbieOrderId = Guid.NewGuid().ToString().ToLower();
+
+            hashpowerMarketPrivateAdapterMock.Setup(m => m.GetActiveOrdersAsync())
+                .ReturnsAsync(new ListOrderResultItem[]
+                {
+                    new ListOrderResultItem()
+                    {
+                        CreatedAt = DateTimeOffset.Now.AddMinutes(-15),
+                        Id = zumbieOrderId,
+                        Expires = DateTimeOffset.Now.AddMinutes(-15).AddDays(1),
+                        MarketFactor = 1000000000,
+                        PriceBtc = 3F
+                    }
+                });
+
+            orderCreationServiceMock.Setup(m =>
+                        m.TryOrderAsync(market, poolId, maxPriceBtc, amountBtc, speedLimitThs))
+                    .ThrowsAsync(new NiceHashApiSendRequestException(new Exception("dummy")));
+
+            var activeOrders = new List<Order>();
+
+            orderCreationBlockerServiceMock.Setup(m => m.ShouldCreateANewOrderAsync())
+                .ReturnsAsync(true);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await GuardedOrderCreationService
+                .TryOrderAsync(market, poolId, maxPriceBtc, amountBtc, speedLimitThs, activeOrders));
+
+            Assert.Contains(zumbieOrderId, ex.Message);
+        }
+
+        [Fact]
+        public async Task TryOrder_OrderCreationBlocked_Error()
+        {
+            string market = "USA";
+            string poolId = "xpto";
+            float maxPriceBtc = 3F;
+            float amountBtc = 0.001F;
+            float speedLimitThs = 0.01F;
+
+            orderCreationBlockerServiceMock.Setup(m => m.ShouldCreateANewOrderAsync())
+                .ReturnsAsync(false);
+
+            var activeOrders = new List<Order>();
+
+            var ex = await Assert.ThrowsAsync<OrderCreationException>(async () => await GuardedOrderCreationService
+                .TryOrderAsync(market, poolId, maxPriceBtc, amountBtc, speedLimitThs, activeOrders));
+
+            Assert.Equal(OrderCreationException.CreateOrderErrorReason.OrderCreationBlocked, ex.Reason);
+        }
+
+        [Fact]
+        public async Task TryOrder_And_GetActiveOrders_NiceHashApiTechnicalIssueException_Error()
+        {
+            string market = "USA";
+            string poolId = "xpto";
+            float maxPriceBtc = 3F;
+            float amountBtc = 0.001F;
+            float speedLimitThs = 0.01F;
+
+            hashpowerMarketPrivateAdapterMock.Setup(m => m.GetActiveOrdersAsync())
+                .ThrowsAsync(new NiceHashApiReadResponseException(new Exception("dummy")));
+
+            orderCreationServiceMock.Setup(m =>
+                        m.TryOrderAsync(market, poolId, maxPriceBtc, amountBtc, speedLimitThs))
+                    .ThrowsAsync(new NiceHashApiSendRequestException(new Exception("dummy")));
+
+            var activeOrders = new List<Order>();
+
+            orderCreationBlockerServiceMock.Setup(m => m.ShouldCreateANewOrderAsync())
+                .ReturnsAsync(true);
+
+            await Assert.ThrowsAsync<NiceHashApiReadResponseException>(async () => await GuardedOrderCreationService
+                .TryOrderAsync(market, poolId, maxPriceBtc, amountBtc, speedLimitThs, activeOrders));
         }
     }
 }

@@ -16,7 +16,7 @@ namespace HPBot.Application.Services
         private readonly IOrderCreationBlockerService orderCreationBlockerService;
         private readonly IHashpowerMarketPrivateAdapter hashpowerMarketPrivateAdapter;
         private readonly ILogger logger;
-        private const int MaxQueryActiveOrdersErrors = 5;
+        private const int MaxQueryActiveOrdersErrors = 7;
 
         public GuardedOrderCreationService(IOrderCreationService orderCreationService, 
             IOrderCreationBlockerService orderCreationBlockerService,
