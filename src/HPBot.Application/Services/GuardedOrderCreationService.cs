@@ -100,7 +100,7 @@ namespace HPBot.Application.Services
                             $"Unknow order ids: {string.Join(';', unknowOrders.Select(u => u.Id))}");
                     }
 
-                    logger.LogWarning("After queried NiceHash active order lists, assumed the no new order was created, so resuming regular flow.");
+                    logger.LogWarning("After queried NiceHash active order lists, assumed no new order was created, so resuming regular flow.");
 
                     return null;
                 }
